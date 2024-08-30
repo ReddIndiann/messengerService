@@ -5,13 +5,14 @@ import User from './User';
 
 class ScheduleMessage extends Model {
   public id!: number;
-  public recipients!: string;
+  public recipients!: string[]; 
   public senderId!: number;
   public userId!: number;
   public content!: string;
   public messageType!: string;
   public dateScheduled!: Date;
   public timeScheduled!: Date;
+  public status!: string;
   public recursion!: string; // e.g., 'daily', 'weekly', etc.
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -25,7 +26,7 @@ ScheduleMessage.init(
       primaryKey: true,
     },
     recipients: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON, 
       allowNull: false,
     },
     senderId: {
@@ -59,6 +60,10 @@ ScheduleMessage.init(
     timeScheduled: {
       type: DataTypes.TIME,
       allowNull: false,
+    },  status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'pending',
     },
     recursion: {
       type: DataTypes.STRING,
