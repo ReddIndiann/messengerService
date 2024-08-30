@@ -46,12 +46,12 @@ User.init(
     walletbalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 10,
     },
     creditbalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
+      defaultValue: 10,
     },
   },
   {

@@ -5,7 +5,7 @@ import User from './User';
 
 class SendMessage extends Model {
   public id!: number;
-  public recipients!: string;
+  public recipients!: string[];  // Array of recipient identifiers
   public senderId!: number;
   public userId!: number;
   public content!: string;
@@ -23,7 +23,7 @@ SendMessage.init(
       primaryKey: true,
     },
     recipients: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,  // Use JSON type to store an array of strings or numbers
       allowNull: false,
     },
     senderId: {
@@ -53,7 +53,7 @@ SendMessage.init(
     recursion: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'none', // Default recursion is 'none'
+      defaultValue: 'none',
     },
   },
   {

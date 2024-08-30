@@ -11,3 +11,4 @@ router.delete('/:id', scheduleMessageController.delete);
 router.get('/user/:userId', scheduleMessageController.getByUserId);
 
 export default router;
+ 

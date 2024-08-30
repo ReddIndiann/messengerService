@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import Contact from '../models/Contact';
+import ScheduleMessage from '../models/ScheduleMessage';
 
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -93,6 +95,27 @@ export const authController = {
     }
   },
 
+
+getById: async(req: Request,res:Response) =>{
+  const {id} = req.params;
+try{
+  const getusers = await User.findByPk(id);
+  if(!getusers){
+    return res.status(404).json({msg: 'User not found'});
+  }res.json(getusers)
+}catch(err: unknown){
+
+  if (err instanceof Error) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  } else {
+    console.error('An unknown error occurred');
+    res.status(500).send('Server error');
+  }
+}
+
+}
+,
   updateUser: async (req: Request, res: Response) => {
     const { id } = req.params;
     const { username, email, password, number, walletbalance, creditbalance, role } = req.body;
@@ -133,6 +156,34 @@ export const authController = {
       res.status(500).send('Server error');
     }
   },
+
+// getAllByForce: async(){
+// try{
+// const allusers =await User.findAll()
+
+// const groups = await  Contact.findAll({
+//   attributes:['userId']
+// })
+
+// }
+
+// },
+getAll: async(req:Request,res:Response)=>{
+try{
+  const users = await User.findAll();
+  res.json(users);
+} catch(err:unknown){
+if(err instanceof Error){
+  console.error(err.message);
+  res.status(500).send('Server Error');
+}else{
+  console.error('An unknown error occured');
+  res.status(500).send('Serer error')
+}
+
+}
+
+},
 
   deleteUser: async (req: Request, res: Response) => {
     const { id } = req.params;
