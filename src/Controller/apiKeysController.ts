@@ -1,33 +1,37 @@
 import { Request, Response } from 'express';
 import ApiKeys from '../models/ApiKeys';
 import User from '../models/User';
-
+import { v4 as uuidv4 } from 'uuid';  
 
 export const apikeysController = {
-    create: async (req: Request, res: Response) => {
-      const { name, userId, keyvalue } = req.body;
-  
-      try {
-        // Check if user exists
-        const user = await User.findByPk(userId);
-        if (!user) {
-          return res.status(404).json({ msg: 'User not found' });
-        }
-  
-        const apikeys = await ApiKeys.create({ name, userId, keyvalue });
-  
-        res.status(201).json(apikeys);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          console.error(err.message);
-          res.status(500).send('Server error');
-        } else {
-          console.error('An unknown error occurred');
-          res.status(500).send('Server error');
-        }
+  create: async (req: Request, res: Response) => {
+    const { name, userId } = req.body;  // Removed keyvalue from req.body
+
+    try {
+      // Check if user exists
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
       }
-    },
-  
+
+      // Generate keyvalue automatically using UUID
+      const keyvalue = uuidv4();
+
+      // Create API key entry with the generated keyvalue
+      const apikeys = await ApiKeys.create({ name, userId, keyvalue });
+
+      res.status(201).json(apikeys);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
+  },
+
     getAll: async (req: Request, res: Response) => {
       try {
         const apikeys = await ApiKeys.findAll();
