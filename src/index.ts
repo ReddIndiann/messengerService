@@ -10,7 +10,7 @@ import sendMessageRoutes from './routes/sendMessageRoutes';
 import contactRoutes from './routes/contactRoutes';
 import groupRoutes from './routes/groupRoutes';
 import contactGroupRoutes from './routes/ContactGroupRoutes';
-
+import apiKeysRoutes from  './routes/apiKeysRoutes';
 
 
 
@@ -35,6 +35,8 @@ app.use('/send-messages', sendMessageRoutes);
 app.use('/contacts', contactRoutes);
 app.use('/groups', groupRoutes);
 app.use('/contactgroups', contactGroupRoutes);
+
+app.use('/apikeys', apiKeysRoutes);
 
 
 
