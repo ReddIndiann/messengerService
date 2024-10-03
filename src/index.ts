@@ -11,6 +11,7 @@ import contactRoutes from './routes/contactRoutes';
 import groupRoutes from './routes/groupRoutes';
 import contactGroupRoutes from './routes/ContactGroupRoutes';
 import apiKeysRoutes from  './routes/apiKeysRoutes';
+import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
 
 
 
@@ -37,6 +38,7 @@ app.use('/groups', groupRoutes);
 app.use('/contactgroups', contactGroupRoutes);
 
 app.use('/apikeys', apiKeysRoutes);
+app.use('/api', developerRoutes);
 
 
 
