@@ -8,6 +8,21 @@ export const groupController = {
     const { groupName, userId } = req.body;
 
     try {
+      // Check if a group with the same name already exists for this user
+      const existingGroup = await Group.findOne({
+        where: {
+          groupName,
+          userId,
+        },
+      });
+
+      if (existingGroup) {
+        return res.status(400).json({
+          msg: 'A group with the same name already exists for this user.',
+        });
+      }
+
+      // Proceed with creating the group if no duplicate is found
       const group = await Group.create({
         groupName,
         userId,

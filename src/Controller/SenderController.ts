@@ -13,6 +13,21 @@ export const senderController = {
         return res.status(404).json({ msg: 'User not found' });
       }
 
+      // Check if a sender with the same name already exists for this user
+      const existingSender = await Sender.findOne({
+        where: {
+          name,
+          userId,
+        },
+      });
+
+      if (existingSender) {
+        return res.status(400).json({
+          msg: 'A sender with the same name already exists for this user.',
+        });
+      }
+
+      // Proceed with creating the sender if no duplicate is found
       const sender = await Sender.create({ name, userId, purpose });
 
       res.status(201).json(sender);
