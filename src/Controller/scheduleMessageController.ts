@@ -11,216 +11,242 @@ const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
 
 export const scheduleMessageController = {
 
-  create: async (req: Request, res: Response) => {
-    const { recipients, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
+//   create: async (req: Request, res: Response) => {
+//     const { recipients, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
 
-    try {
-        // Check if sender and user exist
-        const sender = await Sender.findByPk(senderId);
-        const user = await User.findByPk(userId);
+//     try {
+//         // Check if sender and user exist
+//         const sender = await Sender.findByPk(senderId);
+//         const user = await User.findByPk(userId);
 
-        if (!sender) {
-            return res.status(404).json({ msg: 'Sender not found' });
-        }
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
-        }
-        if (sender.status !== 'approved') {
-            return res.status(400).json({ message: 'Sender is not approved' });
-        }
-        if (user.creditbalance <= 0) {
-            return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
-        }
+//         if (!sender) {
+//             return res.status(404).json({ msg: 'Sender not found' });
+//         }
+//         if (!user) {
+//             return res.status(404).json({ msg: 'User not found' });
+//         }
+//         if (sender.status !== 'approved') {
+//             return res.status(400).json({ message: 'Sender is not approved' });
+//         }
+//         if (user.creditbalance <= 0) {
+//             return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+//         }
 
-        // Deduct 1 credit from user's balance
-        user.creditbalance -= 1;
-        await user.save();
+//         // Deduct 1 credit from user's balance
+//         user.creditbalance -= 1;
+//         await user.save();
 
-        // Handle recipients as an array
-        let recipientsArray: string[] = [];
-        if (typeof recipients === 'string') {
-            recipientsArray = recipients.split(',').map((recipient: string) => recipient.trim());
-        } else if (Array.isArray(recipients)) {
-            recipientsArray = recipients;
-        } else {
-            return res.status(400).json({ msg: 'Invalid recipients format' });
-        }
+//         // Handle recipients as an array
+//         let recipientsArray: string[] = [];
+//         if (typeof recipients === 'string') {
+//             recipientsArray = recipients.split(',').map((recipient: string) => recipient.trim());
+//         } else if (Array.isArray(recipients)) {
+//             recipientsArray = recipients;
+//         } else {
+//             return res.status(400).json({ msg: 'Invalid recipients format' });
+//         }
 
-        // Create the schedule message record
-        const scheduleMessage = await ScheduleMessage.create({
-            recipients: recipientsArray.join(','), // Store as a comma-separated string
-            senderId,
-            userId,
-            content,
-            messageType,
-            dateScheduled,
-            timeScheduled,
-            recursion,
-        });
+//         // Create the schedule message record
+//         const scheduleMessage = await ScheduleMessage.create({
+//             recipients: recipientsArray.join(','), // Store as a comma-separated string
+//             senderId,
+//             userId,
+//             content,
+//             messageType,
+//             dateScheduled,
+//             timeScheduled,
+//             recursion,
+//         });
 
-        // Schedule the cron job
-        const scheduleDateTime = moment(`${dateScheduled} ${timeScheduled}`, 'YYYY-MM-DD HH:mm');
+//         // Schedule the cron job
+//         const scheduleDateTime = moment(`${dateScheduled} ${timeScheduled}`, 'YYYY-MM-DD HH:mm');
 
-        // Set up cron to run at the exact time the message is scheduled
-        const cronJob = cron.schedule(scheduleDateTime.format('m H D M *'), async () => {
-            try {
-                // Prepare data for mNotify API
-                const data = {
-                    recipient: recipientsArray,
-                    sender: sender.name,
-                    message: content,
-                    is_schedule: 'false',
-                };
+//         // Set up cron to run at the exact time the message is scheduled
+//         const cronJob = cron.schedule(scheduleDateTime.format('m H D M *'), async () => {
+//             try {
+//                 // Prepare data for mNotify API
+//                 const data = {
+//                     recipient: recipientsArray,
+//                     sender: sender.name,
+//                     message: content,
+//                     is_schedule: 'false',
+//                 };
 
-                // Configure the request
-                const url = `${endPoint}?key=${apiKey}`;
-                const config = {
-                    method: 'post',
-                    url: url,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                    data: data,
-                };
+//                 // Configure the request
+//                 const url = `${endPoint}?key=${apiKey}`;
+//                 const config = {
+//                     method: 'post',
+//                     url: url,
+//                     headers: {
+//                         'Accept': 'application/json',
+//                         'Content-Type': 'application/json',
+//                     },
+//                     data: data,
+//                 };
 
-                // Send the message via mNotify API
-                const response = await axios(config);
-                console.log('mNotify API Response:', response.data);
+//                 // Send the message via mNotify API
+//                 const response = await axios(config);
+//                 console.log('mNotify API Response:', response.data);
 
-                // Update the schedule message status after sending
-                scheduleMessage.status = 'Sent';
-                await scheduleMessage.save();
+//                 // Update the schedule message status after sending
+//                 scheduleMessage.status = 'Sent';
+//                 await scheduleMessage.save();
 
-            } catch (apiError) {
-                if (axios.isAxiosError(apiError)) {
-                    console.error('mNotify API Error:', apiError.response?.data || apiError.message);
-                } else {
-                    console.error('Unknown API Error:', apiError);
-                }
-            } finally {
-                // Stop the cron job once it's executed
-                cronJob.stop();
-            }
-        }, {
-            scheduled: true,
-        });
+//             } catch (apiError) {
+//                 if (axios.isAxiosError(apiError)) {
+//                     console.error('mNotify API Error:', apiError.response?.data || apiError.message);
+//                 } else {
+//                     console.error('Unknown API Error:', apiError);
+//                 }
+//             } finally {
+//                 // Stop the cron job once it's executed
+//                 cronJob.stop();
+//             }
+//         }, {
+//             scheduled: true,
+//         });
 
-        // Start the cron job
-        cronJob.start();
+//         // Start the cron job
+//         cronJob.start();
 
-        res.status(201).json({
-            message: 'Message created and scheduled successfully',
-            scheduleMessage,
-            creditbalance: user.creditbalance, // Include updated credit balance in the response
-        });
+//         res.status(201).json({
+//             message: 'Message created and scheduled successfully',
+//             scheduleMessage,
+//             creditbalance: user.creditbalance, // Include updated credit balance in the response
+//         });
 
-    } catch (err: unknown) {
-        if (err instanceof Error) {
-            console.error(err.message);
-            res.status(500).send('Server error');
-        } else {
-            console.error('An unknown error occurred');
-            res.status(500).send('Server error');
-        }
-    }
+//     } catch (err: unknown) {
+//         if (err instanceof Error) {
+//             console.error(err.message);
+//             res.status(500).send('Server error');
+//         } else {
+//             console.error('An unknown error occurred');
+//             res.status(500).send('Server error');
+//         }
+//     }
+// },
+create: async (req: Request, res: Response) => {
+  const { recipients, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
+
+  try {
+      // Check if sender and user exist
+      const sender = await Sender.findByPk(senderId);
+      const user = await User.findByPk(userId);
+
+      if (!sender) {
+          return res.status(404).json({ msg: 'Sender not found' });
+      }
+      if (!user) {
+          return res.status(404).json({ msg: 'User not found' });
+      }
+      if (sender.status !== 'approved') {
+          return res.status(400).json({ message: 'Sender is not approved' });
+      }
+
+      // Handle recipients as an array
+      let recipientsArray: string[] = [];
+      if (typeof recipients === 'string') {
+          recipientsArray = recipients.split(',').map((recipient: string) => recipient.trim());
+      } else if (Array.isArray(recipients)) {
+          recipientsArray = recipients;
+      } else {
+          return res.status(400).json({ msg: 'Invalid recipients format' });
+      }
+
+      const totalRecipients = recipientsArray.length;
+
+      // Ensure user has enough credits for all recipients
+      if (user.creditbalance < totalRecipients) {
+          return res.status(400).json({
+              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+          });
+      }
+
+      // Deduct credits based on the number of recipients
+      user.creditbalance -= totalRecipients;
+      await user.save();
+
+      // Create the schedule message record
+      const scheduleMessage = await ScheduleMessage.create({
+          recipients: recipientsArray.join(','), // Store as a comma-separated string
+          senderId,
+          userId,
+          content,
+          messageType,
+          dateScheduled,
+          timeScheduled,
+          recursion,
+      });
+
+      // Schedule the cron job
+      const scheduleDateTime = moment(`${dateScheduled} ${timeScheduled}`, 'YYYY-MM-DD HH:mm');
+
+      // Set up cron to run at the exact time the message is scheduled
+      const cronJob = cron.schedule(scheduleDateTime.format('m H D M *'), async () => {
+          try {
+              // Prepare data for mNotify API
+              const data = {
+                  recipient: recipientsArray,
+                  sender: sender.name,
+                  message: content,
+                  is_schedule: 'false',
+              };
+
+              // Configure the request
+              const url = `${endPoint}?key=${apiKey}`;
+              const config = {
+                  method: 'post',
+                  url: url,
+                  headers: {
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json',
+                  },
+                  data: data,
+              };
+
+              // Send the message via mNotify API
+              const response = await axios(config);
+              console.log('mNotify API Response:', response.data);
+
+              // Update the schedule message status after sending
+              scheduleMessage.status = 'Sent';
+              await scheduleMessage.save();
+
+          } catch (apiError) {
+              if (axios.isAxiosError(apiError)) {
+                  console.error('mNotify API Error:', apiError.response?.data || apiError.message);
+              } else {
+                  console.error('Unknown API Error:', apiError);
+              }
+          } finally {
+              // Stop the cron job once it's executed
+              cronJob.stop();
+          }
+      }, {
+          scheduled: true,
+      });
+
+      // Start the cron job
+      cronJob.start();
+
+      res.status(201).json({
+          message: 'Message created and scheduled successfully',
+          scheduleMessage,
+          creditbalance: user.creditbalance, // Include updated credit balance in the response
+      });
+
+  } catch (err: unknown) {
+      if (err instanceof Error) {
+          console.error(err.message);
+          res.status(500).send('Server error');
+      } else {
+          console.error('An unknown error occurred');
+          res.status(500).send('Server error');
+      }
+  }
 },
 
-  // creatte: async (req: Request, res: Response) => {
-  //   const { recipients, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
 
-  //   try {
-  //     // Check if sender and user exist
-  //     const sender = await Sender.findByPk(senderId);
-  //     const user = await User.findByPk(userId);
-
-  //     if (!sender) {
-  //       return res.status(404).json({ msg: 'Sender not found' });
-  //     }
-  //     if (!user) {
-  //       return res.status(404).json({ msg: 'User not found' });
-  //     }
-
-  //     // Create the schedule message record
-  //     const scheduleMessage = await ScheduleMessage.create({
-  //       recipients,
-  //       senderId,
-  //       userId,
-  //       content,
-  //       messageType,
-  //       dateScheduled,
-  //       timeScheduled,
-  //       recursion,
-  //     });
-
-  //     // Prepare data for mNotify API
-  //     const recipientsArray: string[] = recipients
-  //       .split(',')
-  //       .map((recipient: string) => recipient.trim());
-
-  //     const data = {
-  //       recipient: recipientsArray, // Correct key name
-  //       sender: sender.name, // Use sender's name or other details as needed
-  //       message: content,
-  //       is_schedule: 'true', // Set to 'true' as we're scheduling
-  //       schedule_date: `${dateScheduled} ${timeScheduled}`, // Combine date and time
-  //     };
-
-  //     // Configure the request
-  //     const url = `${endPoint}?key=${apiKey}`;
-  //     const config = {
-  //       method: 'post',
-  //       url: url,
-  //       headers: {
-  //         'Accept': 'application/json',
-  //         'Content-Type': 'application/json'
-  //       },
-  //       data: data
-  //     };
-
-  //     // Send the message via mNotify API
-  //     try {
-  //       const response = await axios(config);
-  //       console.log('mNotify API Response:', response.data);
-
-  //       res.status(201).json({
-  //         message: 'Message created and scheduled successfully',
-  //         scheduleMessage,
-  //         apiResponse: response.data
-  //       });
-  //     } catch (apiError) {
-  //       if (axios.isAxiosError(apiError)) {
-  //         console.error('mNotify API Error:', {
-  //           status: apiError.response?.status,
-  //           statusText: apiError.response?.statusText,
-  //           data: apiError.response?.data,
-  //           message: apiError.message,
-  //         });
-
-  //         res.status(apiError.response?.status || 500).json({
-  //           message: 'Error from mNotify API',
-  //           error: {
-  //             status: apiError.response?.status,
-  //             statusText: apiError.response?.statusText,
-  //             data: apiError.response?.data,
-  //             message: apiError.message,
-  //           }
-  //         });
-  //       } else {
-  //         console.error('Unknown API Error:', apiError);
-  //         res.status(500).send('Server error');
-  //       }
-  //     }
-  //   } catch (err: unknown) {
-  //     if (err instanceof Error) {
-  //       console.error(err.message);
-  //       res.status(500).send('Server error');
-  //     } else {
-  //       console.error('An unknown error occurred');
-  //       res.status(500).send('Server error');
-  //     }
-  //   }
-  // },
   getAll: async (req: Request, res: Response) => {
     try {
       const scheduleMessages = await ScheduleMessage.findAll();
