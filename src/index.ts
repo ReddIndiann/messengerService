@@ -14,9 +14,6 @@ import apiKeysRoutes from  './routes/apiKeysRoutes';
 import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
 
 
-
-
-
 const app = express();
 app.use(cors({
   origin: 'http://localhost:3000', // Replace with your frontend domain

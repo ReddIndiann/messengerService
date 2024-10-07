@@ -11,7 +11,7 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: process.env.DB_DIALECT as any,
-    logging: console.log, // SQL logging on Disable SQL logging if desired
+    logging: false// SQL logging on Disable SQL logging if desired
   }
 );
 
