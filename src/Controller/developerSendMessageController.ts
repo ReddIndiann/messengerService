@@ -209,6 +209,28 @@ export const developerController = {
     const { userId } = req.body;  // This will be set by the validateApiKey middleware
 
     try {
+
+      const validGroupNameRegex = /^[a-z0-9]{1,5}$/;
+
+      if (!validGroupNameRegex.test(groupName)) {
+        return res.status(400).json({
+          msg: 'Group name should only contain lowercase letters and digits, and be at most 5 characters long.',
+        });
+      }
+  
+      // Check if a group with the same name already exists for this user
+      const existingGroup = await Group.findOne({
+        where: {
+          groupName,
+          userId,
+        },
+      });
+  
+      if (existingGroup) {
+        return res.status(400).json({
+          msg: 'A group with the same name already exists for this user.',
+        });
+      }
       // Create the contact using the userId extracted from the API key
       const group = await Group.create({
         groupName,
@@ -269,4 +291,8 @@ export const developerController = {
     }
   },
 
+
+
+
+  
 };

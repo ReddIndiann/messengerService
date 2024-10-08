@@ -15,7 +15,9 @@ export const validateSenderAndApiKey = async (req: Request, res: Response, next:
     if (!apikey) {
       return res.status(403).json({ message: 'Invalid API key' });
     }
-
+    if (apikey.status !== 'enabled') {
+      return res.status(403).json({ message: 'API key is not enabled' });
+    }
     // Find the sender by name and check if it belongs to the user (from API key)
     const sender = await Sender.findOne({
       where: { name: sendername as string, userId: apikey.userId },

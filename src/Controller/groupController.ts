@@ -4,10 +4,54 @@ import Contact from '../models/Contact';
 import ContactGroup from '../models/ContactGroup';
 
 export const groupController = {
-  create: async (req: Request, res: Response) => {
-    const { groupName, userId } = req.body;
+  // create: async (req: Request, res: Response) => {
+  //   const { groupName, userId } = req.body;
 
+  //   try {
+  //     // Check if a group with the same name already exists for this user
+  //     const existingGroup = await Group.findOne({
+  //       where: {
+  //         groupName,
+  //         userId,
+  //       },
+  //     });
+
+  //     if (existingGroup) {
+  //       return res.status(400).json({
+  //         msg: 'A group with the same name already exists for this user.',
+  //       });
+  //     }
+
+  //     // Proceed with creating the group if no duplicate is found
+  //     const group = await Group.create({
+  //       groupName,
+  //       userId,
+  //     });
+
+  //     res.status(201).json(group);
+  //   } catch (err: unknown) {
+  //     if (err instanceof Error) {
+  //       console.error(err.message);
+  //       res.status(500).send('Server error');
+  //     } else {
+  //       console.error('An unknown error occurred');
+  //       res.status(500).send('Server error');
+  //     }
+  //   }
+  // },
+   create : async (req: Request, res: Response) => {
+    const { groupName, userId } = req.body;
+  
     try {
+      // Validate groupName: no special characters and no more than 5 characters
+      const validGroupNameRegex = /^[a-z0-9]{1,5}$/;
+
+      if (!validGroupNameRegex.test(groupName)) {
+        return res.status(400).json({
+          msg: 'Group name should only contain lowercase letters and digits, and be at most 5 characters long.',
+        });
+      }
+  
       // Check if a group with the same name already exists for this user
       const existingGroup = await Group.findOne({
         where: {
@@ -15,19 +59,20 @@ export const groupController = {
           userId,
         },
       });
-
+  
       if (existingGroup) {
         return res.status(400).json({
           msg: 'A group with the same name already exists for this user.',
         });
       }
-
+  
+      
       // Proceed with creating the group if no duplicate is found
       const group = await Group.create({
         groupName,
         userId,
       });
-
+  
       res.status(201).json(group);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -39,7 +84,7 @@ export const groupController = {
       }
     }
   },
-
+  
   getAll: async (req: Request, res: Response) => {
     try {
       // Fetch all groups

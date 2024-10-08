@@ -9,7 +9,10 @@ const router = express.Router();
 router.post('/developer/send', validateSenderAndApiKey, developerController.sendMessage);
 router.post('/developer/schedule', validateSenderAndApiKey, developerController.scheduleMessage);
 router.post('/developer/createcontact', validateApiKey, developerController.developerCreateContact);
-router.get('/developer/createcontactgroup', validateApiKey, developerController.createcontactgroup);
+router.post('/developer/createcontactgroup', validateApiKey, developerController.createcontactgroup);
+// router.post('/developer/sendtogroup', validateApiKey, developerController.createMessageGroups);
+
+// router.post('/developer/scheduletogroup', validateApiKey, developerController.scheduleMessageGroup);
 
 
 router.post('/developer/creategroup', validateApiKey, developerController.developerCreateGroup);

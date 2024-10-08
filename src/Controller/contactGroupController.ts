@@ -2,6 +2,46 @@ import { Request, Response } from 'express';
 import Contact from '../models/Contact';
 import ContactGroup from '../models/ContactGroup';
 import Group from '../models/Group';
+import SendMessage from '../models/SendMessage';
+import Sender from '../models/Sender';
+import User from '../models/User';
+import axios from 'axios';
+import cron from 'node-cron';
+import moment from 'moment';
+import ScheduleMessage from '../models/ScheduleMessage';
+
+const endPoint = 'https://api.mnotify.com/api/sms/quick';
+const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
+
+
+const findSenderAndUser = async (senderId: number, userId: number) => {
+  const sender = await Sender.findByPk(senderId);
+  const user = await User.findByPk(userId);
+  return { sender, user };
+};
+const handleApiError = (apiError: any, res: Response) => {
+  if (axios.isAxiosError(apiError)) {
+    console.error('mNotify API Error:', {
+      status: apiError.response?.status,
+      statusText: apiError.response?.statusText,
+      data: apiError.response?.data,
+      message: apiError.message,
+    });
+
+    res.status(apiError.response?.status || 500).json({
+      message: 'Error from mNotify API',
+      error: {
+        status: apiError.response?.status,
+        statusText: apiError.response?.statusText,
+        data: apiError.response?.data,
+        message: apiError.message,
+      },
+    });
+  } else {
+    console.error('Unknown API Error:', apiError);
+    res.status(500).send('Server error');
+  }
+};
 export const contactGroupController = {
   create: async (req: Request, res: Response) => {
     const { contactId, groupId } = req.body;
@@ -161,4 +201,230 @@ export const contactGroupController = {
       }
     }
   },
+  createMessageGroups: async (req: Request, res: Response) => {
+    const { groupIds, senderId, userId, content, messageType, recursion } = req.body;
+  
+    try {
+        const { sender, user } = await findSenderAndUser(senderId, userId);
+    
+        if (!sender) {
+            return res.status(404).json({ message: 'Sender not found' });
+        }
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (sender.status !== 'approved') {
+            return res.status(400).json({ message: 'Sender is not approved' });
+        }
+
+        // Fetch all contacts belonging to the provided group(s)
+        const contacts = await ContactGroup.findAll({
+            where: { groupId: groupIds },  // Get all contacts in the groupIds list
+            include: [{ model: Contact, attributes: ['phone'] }], // Include phone numbers from the Contact model
+        });
+
+        // Extract unique phone numbers
+        const recipientList = contacts
+            .map((contactGroup: any) => contactGroup.Contact.phone) // Extract phone numbers from contact group
+            .filter((phone: string | undefined) => phone); // Filter out undefined values
+
+        const uniqueRecipients = Array.from(new Set(recipientList)); // Ensure no duplicates
+        const totalRecipients = uniqueRecipients.length;
+
+        if (totalRecipients === 0) {
+            return res.status(400).json({ message: 'No valid recipients found in the specified group(s).' });
+        }
+
+        // Ensure the user has enough credits for all recipients
+        if (user.creditbalance < totalRecipients) {
+            return res.status(400).json({
+                message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+            });
+        }
+
+        // Deduct credits based on the number of unique recipients
+        user.creditbalance -= totalRecipients;
+        await user.save();
+
+        // Create the message with recipients as an array
+        const sendMessage = await SendMessage.create({
+            recipients: uniqueRecipients, // Using the unique phone numbers array
+            senderId,
+            userId,
+            content,
+            messageType,
+            recursion,
+        });
+
+        // Prepare data for external API call
+        const data = {
+            recipient: uniqueRecipients, // Send to all unique recipients
+            sender: sender.name,         // Assuming sender.name is correct
+            message: content,
+            is_schedule: 'false',
+            schedule_date: '',
+        };
+
+        // Call the external API
+        const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+        });
+
+        console.log('mNotify API Response:', response.data);
+
+        res.status(201).json({
+            message: 'Message created and sent successfully',
+            sendMessage,
+            apiResponse: response.data,
+            creditbalance: user.creditbalance, // Include updated credit balance in the response
+        });
+
+        // Notify the user if their credit balance is now zero
+        if (user.creditbalance === 0) {
+            console.warn(`User ${user.username} has run out of credits.`);
+            // Optionally, notify the user via email or SMS
+        }
+
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+            handleApiError(err, res);
+        } else {
+            console.error('Server Error:', err);
+            res.status(500).send('Server error');
+        }
+    }
+},
+
+scheduleMessageGroup: async (req: Request, res: Response) => {
+  const { groupIds, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
+
+  try {
+      // Check if sender and user exist
+      const sender = await Sender.findByPk(senderId);
+      const user = await User.findByPk(userId);
+
+      if (!sender) {
+          return res.status(404).json({ msg: 'Sender not found' });
+      }
+      if (!user) { 
+          return res.status(404).json({ msg: 'User not found' });
+      }
+      if (sender.status !== 'approved') {
+          return res.status(400).json({ message: 'Sender is not approved' });
+      }
+
+      // Fetch all contacts in the specified groups
+      const contacts = await ContactGroup.findAll({
+          where: { groupId: groupIds },
+          include: [{ model: Contact, attributes: ['phone'] }],  // Assuming Contact contains the phone numbers
+      });
+
+      // Extract unique phone numbers from the contacts
+      const recipientsArray = contacts
+          .map((contactGroup: any) => contactGroup.Contact.phone) // Extract phone numbers
+          .filter((phone: string | undefined) => phone); // Filter out any undefined values
+      const uniqueRecipients = Array.from(new Set(recipientsArray)); // Remove duplicates
+
+      const totalRecipients = uniqueRecipients.length;
+
+      if (totalRecipients === 0) {
+          return res.status(400).json({ msg: 'No valid recipients found in the specified group(s).' });
+      }
+
+      // Ensure user has enough credits for all recipients
+      if (user.creditbalance < totalRecipients) {
+          return res.status(400).json({
+              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+          });
+      }
+
+      // Deduct credits based on the number of recipients
+      user.creditbalance -= totalRecipients;
+      await user.save();
+
+      // Create the schedule message record
+      const scheduleMessage = await ScheduleMessage.create({
+          recipients: uniqueRecipients.join(','), // Store recipients as a comma-separated string
+          senderId,
+          userId,
+          content,
+          messageType,
+          dateScheduled,
+          timeScheduled,
+          recursion,
+      });
+
+      // Schedule the cron job
+      const scheduleDateTime = moment(`${dateScheduled} ${timeScheduled}`, 'YYYY-MM-DD HH:mm');
+
+      // Set up cron to run at the exact time the message is scheduled
+      const cronJob = cron.schedule(scheduleDateTime.format('m H D M *'), async () => {
+          try {
+              // Prepare data for mNotify API
+              const data = {
+                  recipient: uniqueRecipients, // Send to all unique recipients
+                  sender: sender.name,
+                  message: content,
+                  is_schedule: 'false',
+              };
+
+              // Configure the request
+              const url = `${endPoint}?key=${apiKey}`;
+              const config = {
+                  method: 'post',
+                  url: url,
+                  headers: {
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json',
+                  },
+                  data: data,
+              };
+
+              // Send the message via mNotify API
+              const response = await axios(config);
+              console.log('mNotify API Response:', response.data);
+
+              // Update the schedule message status after sending
+              scheduleMessage.status = 'Sent';
+              await scheduleMessage.save();
+
+          } catch (apiError) {
+              if (axios.isAxiosError(apiError)) {
+                  console.error('mNotify API Error:', apiError.response?.data || apiError.message);
+              } else {
+                  console.error('Unknown API Error:', apiError);
+              }
+          } finally {
+              // Stop the cron job once it's executed
+              cronJob.stop();
+          }
+      }, {
+          scheduled: true,
+      });
+
+      // Start the cron job
+      cronJob.start();
+
+      res.status(201).json({
+          message: 'Message created and scheduled successfully',
+          scheduleMessage,
+          creditbalance: user.creditbalance, // Include updated credit balance in the response
+      });
+
+  } catch (err: unknown) {
+      if (err instanceof Error) {
+          console.error(err.message);
+          res.status(500).send('Server error');
+      } else {
+          console.error('An unknown error occurred');
+          res.status(500).send('Server error');
+      }
+  }
+},
+
+
+
 };

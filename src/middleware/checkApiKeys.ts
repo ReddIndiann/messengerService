@@ -12,7 +12,9 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     if (!apikey) {
       return res.status(403).json({ message: 'Invalid API key' });
     }
-
+    if (apikey.status !== 'enabled') {
+      return res.status(403).json({ message: 'API key is not enabled' });
+    }
     req.body.userId = apikey.userId; // Attach userId from API key to the request body
     next();
   } catch (err) {
