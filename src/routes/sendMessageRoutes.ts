@@ -9,5 +9,6 @@ router.get('/:id', sendMessageController.getById);
 router.put('/:id', sendMessageController.update);
 router.delete('/:id', sendMessageController.delete);
 router.get('/user/:userId', sendMessageController.getByUserId);
+router.get('/getlist/:userId', sendMessageController.getTotalMessagesAndRecipients);
 
 export default router;

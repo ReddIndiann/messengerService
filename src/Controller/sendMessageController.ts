@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import SendMessage from '../models/SendMessage';
+import ScheduleMessage from '../models/ScheduleMessage';
 import Sender from '../models/Sender';
 import User from '../models/User';
 import axios from 'axios';
@@ -233,4 +234,81 @@ export const sendMessageController = {
       }
     }
   },
+
+
+
+
+  getTotalMessagesAndRecipients: async (req: Request, res: Response) => {
+    const { userId } = req.params;
+  
+    try {
+      // Fetch user to ensure they exist
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Fetch all sent messages for this user
+      const sentMessages = await SendMessage.findAll({
+        where: { userId },
+      });
+  
+      // Fetch all scheduled messages for this user
+      const scheduledMessages = await ScheduleMessage.findAll({
+        where: { userId },
+      }); 
+  
+      // Initialize an object to track counts per month
+      const monthlyData: { [key: string]: { totalMessagesSent: number; uniqueRecipients: Set<string> } } = {};
+  
+      // Helper function to process messages
+      const processMessages = (messages: any[], messageType: string) => {
+        messages.forEach((message) => {
+          // Extract the year and month from createdAt or scheduledTime
+          const date = messageType === 'sent' ? message.createdAt : message.scheduledTime;
+          const monthYear = new Date(date).toISOString().slice(0, 7); // Format: YYYY-MM
+  
+          // Initialize the monthYear entry if it doesn't exist
+          if (!monthlyData[monthYear]) {
+            monthlyData[monthYear] = { totalMessagesSent: 0, uniqueRecipients: new Set<string>() };
+          }
+  
+          // Increment the total messages sent
+          monthlyData[monthYear].totalMessagesSent += 1;
+  
+          // Add unique recipients to the set
+          if (Array.isArray(message.recipients)) {
+            message.recipients.forEach((recipient: any) => {
+              monthlyData[monthYear].uniqueRecipients.add(recipient);
+            });
+          }
+        });
+      };
+  
+      // Process sent messages
+      processMessages(sentMessages, 'sent');
+  
+      // Process scheduled messages
+      processMessages(scheduledMessages, 'scheduled');
+  
+      // Prepare the final response data
+      const responseData = Object.entries(monthlyData).map(([monthYear, data]) => ({
+        monthYear,
+        totalMessagesSent: data.totalMessagesSent,
+        totalRecipientsCount: data.uniqueRecipients.size,
+      }));
+  
+      // Send response
+      res.json(responseData);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
+  },
+  
 };

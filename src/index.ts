@@ -16,7 +16,8 @@ import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path
 
 const app = express();
 app.use(cors({
-  origin: 'http://localhost:3000', // Replace with your frontend domain
+  origin: ['http://localhost:3000', 'http://192.168.100.126:3000','192.168.137.1'],
+  // origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
