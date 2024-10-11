@@ -12,14 +12,14 @@ import groupRoutes from './routes/groupRoutes';
 import contactGroupRoutes from './routes/ContactGroupRoutes';
 import apiKeysRoutes from  './routes/apiKeysRoutes';
 import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
-
+import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as needed
+import PackagesController from './routes/packagesRoute'; // Adjust path as needed
 
 const app = express();
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://192.168.100.126:3000','192.168.137.1'],
-  // origin: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: true, // Allow all domains for testing, you can restrict it later
+  methods: 'GET,POST,PUT,DELETE,OPTIONS', // Allow specific HTTP methods
+  allowedHeaders: 'Content-Type, Authorization' // Allow specific headers
 }));
 
 const port = 5000;
@@ -37,14 +37,18 @@ app.use('/contactgroups', contactGroupRoutes);
 
 app.use('/apikeys', apiKeysRoutes);
 app.use('/api', developerRoutes);
+app.use('/wallet', WalletHistory);
+
+
+app.use('/packages', PackagesController);
 
 
 
-app.listen(port, async () => {
+app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   
   try {
-    await sequelize.sync({ alter: true }); // Sync all models
+     sequelize.sync({ alter: true }); // Sync all models
     console.log('Database & tables created!');
   } catch (err) {
     console.error('Error syncing database:', err);

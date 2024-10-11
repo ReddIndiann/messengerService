@@ -1,6 +1,8 @@
 import express from 'express';
 import { developerController } from '../Controller/developerSendMessageController';
 import { developergetController } from '../Controller/developergetMessages';
+import { developerTemplateController } from '../Controller/developerTemplateController';
+
 import { validateApiKey } from '../middleware/checkApiKeys';
 import { validateSenderAndApiKey } from '../middleware/checkApiKeyAndSenderId';
 const router = express.Router();
@@ -22,6 +24,6 @@ router.get('/developer/getschedulemessages', validateApiKey, developergetControl
 router.get('/developer/getcontacts', validateApiKey, developergetController.getContactsByUserId);
 router.get('/developer/getcontacts', validateApiKey, developergetController.getContactsByUserId);
 
-
+router.post('/developer/createtemplate', validateApiKey, developerTemplateController.developerCreateTemplate);
 
 export default router;
