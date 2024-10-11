@@ -1,43 +1,46 @@
 import { Request, Response } from 'express';
 import Packages from '../models/packages';
-import User from '../models/User';
 
 export const packagesController = {
+  // Create a new package
   create: async (req: Request, res: Response) => {
-    const { name, type, price, expiry,duration} = req.body;
+    const { name, type, price, rate, smscount, expiry, duration } = req.body;
+
+    // Basic validation
+    if (!name || !type || !price || !rate || !smscount || !expiry || !duration) {
+        return res.status(400).json({ msg: 'All fields are required' });
+    }
 
     try {
-      // Check if user exists
-     
-      // Check if a sender with the same name already exists for this user
-      const existingpackage = await Packages.findOne({
-        where: {
-          name,
-       
-        },
-      });
-
-      if (existingpackage) {
-        return res.status(400).json({
-          msg: 'A package with the same name already exists ',
+        // Check if a package with the same name already exists
+        const existingPackage = await Packages.findOne({
+            where: { name },
         });
-      }
 
-      // Proceed with creating the sender if no duplicate is found
-      const packages = await Packages.create({ name, type, price, expiry,duration });
+        if (existingPackage) {
+            return res.status(400).json({ msg: 'A package with the same name already exists' });
+        }
 
-      res.status(201).json(packages);
+        // Proceed with creating the package if no duplicate is found
+        const newPackage = await Packages.create({
+            name,
+            type,
+            price,
+            rate,
+            smscount,
+            expiry,
+            duration,
+        });
+
+        res.status(201).json(newPackage);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err.message);
+        console.error('Error creating package:', err instanceof Error ? err.message : 'Unknown error');
         res.status(500).send('Server error');
-      } else {
-        console.error('An unknown error occurred');
-        res.status(500).send('Server error');
-      }
     }
-  },
+},
 
+
+  // Get all packages
   getAll: async (req: Request, res: Response) => {
     try {
       const packages = await Packages.findAll();
@@ -53,16 +56,17 @@ export const packagesController = {
     }
   },
 
+  // Get a package by ID
   getById: async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-      const packages = await Packages.findByPk(id);
-      if (!packages) {
-        return res.status(404).json({ msg: 'Sender not found' });
+      const packageDetails = await Packages.findByPk(id);
+      if (!packageDetails) {
+        return res.status(404).json({ msg: 'Package not found' });
       }
 
-      res.json(packages);
+      res.json(packageDetails);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -74,25 +78,29 @@ export const packagesController = {
     }
   },
 
+  // Update a package by ID
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, type, price, expiry,duration } = req.body;
+    const { name, type, price, rate, smscount, expiry, duration } = req.body;
 
     try {
-      const packages = await Packages.findByPk(id);
-      if (!packages) {
-        return res.status(404).json({ msg: 'Sender not found' });
+      const packageDetails = await Packages.findByPk(id);
+      if (!packageDetails) {
+        return res.status(404).json({ msg: 'Package not found' });
       }
 
-      if (name) packages.name = name;
-      if (type) packages.type = type;
-      if (price) packages.price = price;
-      if (expiry) packages.expiry = expiry;
-      if (duration) packages.duration = duration;
+      // Update the package fields if they are provided in the request
+      if (name) packageDetails.name = name;
+      if (type) packageDetails.type = type;
+      if (price) packageDetails.price = price;
+      if (rate) packageDetails.rate = rate;
+      if (smscount) packageDetails.smscount = smscount;
+      if (expiry) packageDetails.expiry = expiry;
+      if (duration) packageDetails.duration = duration;
 
-      await packages.save();
+      await packageDetails.save();
 
-      res.json(packages);
+      res.json(packageDetails);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -104,18 +112,19 @@ export const packagesController = {
     }
   },
 
+  // Delete a package by ID
   delete: async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
-      const packages = await Packages.findByPk(id);
-      if (!packages) {
-        return res.status(404).json({ msg: 'Sender not found' });
+      const packageDetails = await Packages.findByPk(id);
+      if (!packageDetails) {
+        return res.status(404).json({ msg: 'Package not found' });
       }
 
-      await packages.destroy();
+      await packageDetails.destroy();
 
-      res.json({ msg: 'Sender deleted successfully' });
+      res.json({ msg: 'Package deleted successfully' });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -126,25 +135,4 @@ export const packagesController = {
       }
     }
   },
-
-//   getByUserId: async (req: Request, res: Response) => {
-//     const { userId } = req.params;
-
-//     try {
-//       const senders = await Sender.findAll({ where: { userId } });
-//       if (!senders.length) {
-//         return res.status(404).json({ msg: 'No senders found for this user' });
-//       }
-
-//       res.json(senders);
-//     } catch (err: unknown) {
-//       if (err instanceof Error) {
-//         console.error(err.message);
-//         res.status(500).send('Server error');
-//       } else {
-//         console.error('An unknown error occurred');
-//         res.status(500).send('Server error');
-//       }
-//     }
-//   },
 };

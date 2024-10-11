@@ -1,12 +1,13 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/database';
-import User from './User'; // Import the User model
 
 class Packages extends Model {
   public id!: number;
   public name!: string;
   public type!: string;
   public price!: number;
+  public rate!: number;
+  public smscount!: string;
   public expiry!: string;
   public duration!: number;
   public readonly createdAt!: Date;
@@ -24,39 +25,37 @@ Packages.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    // userId: {
-    //   type: DataTypes.INTEGER.UNSIGNED,
-    //   allowNull: false,
-    //   references: {
-    //     model: User,
-    //     key: 'id',
-    //   },
-    // },
     type: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     price: {
+        type: DataTypes.FLOAT, // Changed to FLOAT for decimal support
+        allowNull: false,
+    },
+    rate: {
+        type: DataTypes.FLOAT, // Changed to FLOAT for decimal support
+        allowNull: false,
+    },
+    smscount: {
+        type: DataTypes.INTEGER, // Confirm if this should be INTEGER
+        allowNull: false,
+    },
+    
+    expiry:
+     {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    duration: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    expiry: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    //   defaultValue: 'pending', // Default status is 'pending'
-    },
-    duration: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
   },
   {
     sequelize,
     tableName: 'packages',
   }
 );
-
-// Define the association
-// Packages.belongsTo(User, { foreignKey: 'userId' });
 
 export default Packages;

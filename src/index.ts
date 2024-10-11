@@ -14,7 +14,7 @@ import apiKeysRoutes from  './routes/apiKeysRoutes';
 import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
 import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as needed
 import PackagesController from './routes/packagesRoute'; // Adjust path as needed
-
+import BundleHistory from './routes/bundleHistoryRoutes';
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, you can restrict it later
@@ -41,6 +41,9 @@ app.use('/wallet', WalletHistory);
 
 
 app.use('/packages', PackagesController);
+app.use('/bundle', BundleHistory);
+
+
 
 
 
