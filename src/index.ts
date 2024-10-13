@@ -15,6 +15,8 @@ import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path
 import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as needed
 import PackagesController from './routes/packagesRoute'; // Adjust path as needed
 import BundleHistory from './routes/bundleHistoryRoutes';
+
+
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, you can restrict it later
@@ -34,17 +36,12 @@ app.use('/send-messages', sendMessageRoutes);
 app.use('/contacts', contactRoutes);
 app.use('/groups', groupRoutes);
 app.use('/contactgroups', contactGroupRoutes);
-
 app.use('/apikeys', apiKeysRoutes);
 app.use('/api', developerRoutes);
 app.use('/wallet', WalletHistory);
-
-
+ 
 app.use('/packages', PackagesController);
 app.use('/bundle', BundleHistory);
-
-
-
 
 
 app.listen(port, () => {
@@ -57,3 +54,4 @@ app.listen(port, () => {
     console.error('Error syncing database:', err);
   }
 });
+

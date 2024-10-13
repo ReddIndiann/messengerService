@@ -4,7 +4,8 @@ import { bundleHistoryController } from '../Controller/bundleHistoryController';
 const router = Router();
 
 // Create a new bundle history entry
-router.post('/create', bundleHistoryController.create);
+router.post('/createoutapp', bundleHistoryController.createWithNormalWallet);
+router.post('/createinapp', bundleHistoryController.createWithAppWallet);
 
 // Get all bundle history entries
 router.get('/', bundleHistoryController.getAll);
@@ -14,6 +15,9 @@ router.get('/:id', bundleHistoryController.getById);
 
 // Get bundle history entries by user ID
 router.get('/user/:userId', bundleHistoryController.getByUserId); // New route added
+
+// Get bundle history entries/sum by user ID
+router.get('/usertype/:userId', bundleHistoryController.getByUserTypeId); // New route added
 
 // Update a bundle history entry by ID
 router.put('/:id', bundleHistoryController.update);

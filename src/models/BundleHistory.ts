@@ -7,7 +7,7 @@ class BundleHistory extends Model {
 //   public date_bought!: Date;
   public userId!: number;
   public packageId!: number;
-  
+  public type!: string;
   public package_name!: string;
   
   public creditscore!: string;
@@ -33,6 +33,10 @@ BundleHistory.init(
         key: 'id',
       },
     },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
    // Inside BundleHistory.init
 packageId: { // Corrected naming from packageid to packageId
     type: DataTypes.INTEGER.UNSIGNED,
@@ -46,6 +50,7 @@ package_name: { // Changed type to STRING
     type: DataTypes.STRING,
     allowNull: false,
 },
+
 creditscore: { // Changed type to STRING
     type: DataTypes.INTEGER,
     allowNull: false,
