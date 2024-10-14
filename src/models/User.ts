@@ -53,12 +53,12 @@ User.init(
     expirybalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 100,
+      defaultValue: 0,
     },
     nonexpirybalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 100,
+      defaultValue: 0,
     },
     bonusbalance: {
       type: DataTypes.INTEGER,

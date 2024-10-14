@@ -16,7 +16,7 @@ import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as need
 import PackagesController from './routes/packagesRoute'; // Adjust path as needed
 import BundleHistory from './routes/bundleHistoryRoutes';
 import CreditUsageController from './routes/creditusageRoute';
-
+import checkExpiredBundles from './Controller/expirycheck';
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, you can restrict it later
@@ -27,7 +27,7 @@ app.use(cors({
 const port = 5000;
  
 app.use(express.json());
-
+checkExpiredBundles()
 app.use('/auth', authRoutes);
 app.use('/senders', senderRoutes);
 app.use('/message-templates', messageTemplateRoutes);
