@@ -4,7 +4,7 @@ import ScheduleMessage from '../models/ScheduleMessage';
 import Sender from '../models/Sender';
 import User from '../models/User';
 import axios from 'axios';
-
+import CreditUsage from '../models/CreditUsage';
 const endPoint = 'https://api.mnotify.com/api/sms/quick';
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
 
@@ -44,10 +44,10 @@ export const sendMessageController = {
  
   create: async (req: Request, res: Response) => {
     const { recipients, senderId, userId, content, messageType, recursion } = req.body;
-  
+
     try {
       const { sender, user } = await findSenderAndUser(senderId, userId);
-  
+
       if (!sender) {
         return res.status(404).json({ message: 'Sender not found' });
       }
@@ -57,40 +57,64 @@ export const sendMessageController = {
       if (sender.status !== 'approved') {
         return res.status(400).json({ message: 'Sender is not approved' });
       }
-  
+
       const recipientList = Array.isArray(recipients) ? recipients : [];
       const totalRecipients = recipientList.length;
-  
-      // Ensure the user has enough credits for all recipients
-      if (user.expirybalance < totalRecipients) {
+
+      // Fetch credit usage order
+      const creditUsage = await CreditUsage.findOne();
+      if (!creditUsage) {
+        return res.status(500).json({ message: 'Credit usage order not found' });
+      }
+
+      // Array of credit types in the specified order
+      const creditTypes = [creditUsage.usefirst, creditUsage.usesecond, creditUsage.usethird];
+      let deducted = false;
+
+      // Attempt to deduct credits in the specified order
+      for (const type of creditTypes) {
+        if (type === 'expiry' && user.expirybalance >= totalRecipients) {
+          user.expirybalance -= totalRecipients;
+          deducted = true;
+          break;
+        } else if (type === 'bonus' && user.bonusbalance >= totalRecipients) {
+          user.bonusbalance -= totalRecipients;
+          deducted = true;
+          break;
+        } else if (type === 'non-expiry' && user.nonexpirybalance >= totalRecipients) {
+          user.nonexpirybalance -= totalRecipients;
+          deducted = true;
+          break;
+        }
+      }
+
+      if (!deducted) {
         return res.status(400).json({
-          message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.expirybalance}.`
+          message: `Insufficient credits. You need ${totalRecipients} credits, but have insufficient balance in specified types.`,
         });
       }
-  
-      // Deduct credits based on the number of recipients
-      user.expirybalance -= totalRecipients;
+
       await user.save();
-  
+
       // Create the message with recipients as an array
       const sendMessage = await SendMessage.create({
-        recipients, // Assuming recipients is already an array
+        recipients,
         senderId,
         userId,
         content,
         messageType,
         recursion,
       });
-  
+
       // Prepare data for external API call
       const data = {
         recipient: recipientList,
-        sender: sender.name, // Assuming sender.name is correct
+        sender: sender.name,
         message: content,
         is_schedule: 'false',
         schedule_date: '',
       };
-  
+
       // Call the external API
       const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
         headers: {
@@ -98,22 +122,26 @@ export const sendMessageController = {
           'Content-Type': 'application/json',
         },
       });
-  
+
       console.log('mNotify API Response:', response.data);
-  
+
       res.status(201).json({
         message: 'Message created and sent successfully',
         sendMessage,
         apiResponse: response.data,
-        creditbalance: user.expirybalance, // Include updated credit balance in the response
+        creditbalance: {
+          expiry: user.expirybalance,
+          bonus: user.bonusbalance,
+          nonexpiry: user.nonexpirybalance,
+        },
       });
-  
+
       // Notify the user if their credit balance is now zero
-      if (user.expirybalance === 0) {
+      if (user.expirybalance === 0 || user.bonusbalance === 0 || user.nonexpirybalance === 0) {
         console.warn(`User ${user.username} has run out of credits.`);
         // Optionally, notify the user via email or SMS
       }
-  
+
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         handleApiError(err, res);

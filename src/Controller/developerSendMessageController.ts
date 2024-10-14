@@ -12,7 +12,7 @@ import ContactGroup from '../models/ContactGroup';
 import ScheduleMessage from '../models/ScheduleMessage';
 const endPoint = 'https://api.mnotify.com/api/sms/quick';
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
-
+import CreditUsage from '../models/CreditUsage';
 
 
 
@@ -44,36 +44,66 @@ export const developerController = {
   sendMessage: async (req: Request, res: Response) => {
     const { recipients, content } = req.body;
     const { userId, sender } = req.body; // Using sender object from middleware
-
+  
     try {
-      // 1. Validate user
+      // Validate user
       const user = await User.findByPk(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-      if (user.expirybalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      if (user.expirybalance <= 0 && user.bonusbalance <= 0 && user.nonexpirybalance <= 0) {
+        return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      }
   
-      // 2. Deduct 1 credit and save user balance
-      user.expirybalance -= 1;
+      // Fetch credit usage order
+      const creditUsage = await CreditUsage.findOne();
+      if (!creditUsage) {
+        return res.status(500).json({ message: 'Credit usage order not found' });
+      }
+  
+      const creditTypes = [creditUsage.usefirst, creditUsage.usesecond, creditUsage.usethird];
+      let deducted = false;
+  
+      // Attempt to deduct 1 credit in the specified order
+      for (const type of creditTypes) {
+        if (type === 'expiry' && user.expirybalance > 0) {
+          user.expirybalance -= 1;
+          deducted = true;
+          break;
+        } else if (type === 'bonus' && user.bonusbalance > 0) {
+          user.bonusbalance -= 1;
+          deducted = true;
+          break;
+        } else if (type === 'non-expiry' && user.nonexpirybalance > 0) {
+          user.nonexpirybalance -= 1;
+          deducted = true;
+          break;
+        }
+      }
+  
+      if (!deducted) {
+        return res.status(400).json({ message: 'Insufficient credits for this operation.' });
+      }
+  
       await user.save();
   
-      // 3. Create a new message record
+      // Create a new message record
       const sendMessage = await SendMessage.create({
         recipients,
-        senderId: sender.id, // Use senderId from the validated sender object
+        senderId: sender.id,
         userId,
         content,
-        messageType: 'API', // Assuming SMS
+        messageType: 'API',
         recursion: false,
       });
   
-      // 4. Prepare mNotify API data
+      // Prepare mNotify API data
       const data = {
         recipient: Array.isArray(recipients) ? recipients : [],
-        sender: sender.name, // Use sender's name from validated sender object
+        sender: sender.name,
         message: content,
         is_schedule: 'false',
       };
   
-      // 5. Call mNotify API
+      // Call mNotify API
       const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
         headers: {
           Accept: 'application/json',
@@ -81,17 +111,21 @@ export const developerController = {
         },
       });
   
-      // 6. Respond with success
+      // Respond with success
       console.log('mNotify API Response:', response.data);
       res.status(201).json({
         message: 'Message sent successfully',
         sendMessage,
         apiResponse: response.data,
-        creditbalance: user.expirybalance,
+        creditbalance: {
+          expiry: user.expirybalance,
+          bonus: user.bonusbalance,
+          nonexpiry: user.nonexpirybalance,
+        },
       });
   
       // Optional: Notify the user if they run out of credits
-      if (user.expirybalance === 0) {
+      if (user.expirybalance === 0 && user.bonusbalance === 0 && user.nonexpirybalance === 0) {
         console.warn(`User ${user.username} has run out of credits.`);
       }
   
@@ -112,7 +146,8 @@ export const developerController = {
         res.status(500).send('Server error');
       }
     }
-  },
+  }
+  ,
 
   scheduleMessage: async (req: Request, res: Response) => {
     const { recipients, content, dateScheduled, timeScheduled, recursion } = req.body;
@@ -122,10 +157,40 @@ export const developerController = {
       // Validate user
       const user = await User.findByPk(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-      if (user.expirybalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      if (user.expirybalance <= 0 && user.bonusbalance <= 0 && user.nonexpirybalance <= 0) {
+        return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      }
   
-      // Deduct 1 credit and save user balance
-      user.expirybalance -= 1;
+      // Fetch credit usage order
+      const creditUsage = await CreditUsage.findOne();
+      if (!creditUsage) {
+        return res.status(500).json({ message: 'Credit usage order not found' });
+      }
+  
+      const creditTypes = [creditUsage.usefirst, creditUsage.usesecond, creditUsage.usethird];
+      let deducted = false;
+  
+      // Attempt to deduct 1 credit in the specified order
+      for (const type of creditTypes) {
+        if (type === 'expiry' && user.expirybalance > 0) {
+          user.expirybalance -= 1;
+          deducted = true;
+          break;
+        } else if (type === 'bonus' && user.bonusbalance > 0) {
+          user.bonusbalance -= 1;
+          deducted = true;
+          break;
+        } else if (type === 'non-expiry' && user.nonexpirybalance > 0) {
+          user.nonexpirybalance -= 1;
+          deducted = true;
+          break;
+        }
+      }
+  
+      if (!deducted) {
+        return res.status(400).json({ message: 'Insufficient credits for this operation.' });
+      }
+  
       await user.save();
   
       // Handle recipients as an array
@@ -136,7 +201,7 @@ export const developerController = {
       // Create the scheduled message record
       const scheduleMessage = await ScheduleMessage.create({
         recipients: recipientsArray.join(','),
-        senderId: sender.id, // Use senderId from validated sender object
+        senderId: sender.id,
         userId,
         content,
         messageType: 'API',
@@ -152,7 +217,7 @@ export const developerController = {
           // Prepare data for mNotify API
           const data = {
             recipient: recipientsArray,
-            sender: sender.name, // Use sender's name from validated sender object
+            sender: sender.name,
             message: content,
             is_schedule: 'false', // Send now
           };
@@ -189,7 +254,11 @@ export const developerController = {
       res.status(201).json({
         message: 'Message scheduled successfully',
         scheduleMessage,
-        creditbalance: user.expirybalance,
+        creditbalance: {
+          expiry: user.expirybalance,
+          bonus: user.bonusbalance,
+          nonexpiry: user.nonexpirybalance,
+        },
       });
   
     } catch (err: unknown) {
@@ -204,7 +273,8 @@ export const developerController = {
         res.status(500).send('Server error');
       }
     }
-  },
+  }
+,  
   developerCreateContact: async (req: Request, res: Response) => {
     const { firstname, lastname, birthday, phone, email } = req.body;
     const { userId } = req.body;  // This will be set by the validateApiKey middleware
