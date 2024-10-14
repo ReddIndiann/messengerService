@@ -9,7 +9,9 @@ class User extends Model {
   public number!: string;
   public role!: string;
   public walletbalance!: number;
-  public creditbalance!: number;
+  public expirybalance!: number;
+  public nonexpirybalance!: number;
+  public bonusbalance!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -48,7 +50,17 @@ User.init(
       allowNull: false,
       defaultValue: 100,
     },
-    creditbalance: {
+    expirybalance: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 100,
+    },
+    nonexpirybalance: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 100,
+    },
+    bonusbalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 100,

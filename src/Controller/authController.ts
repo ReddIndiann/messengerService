@@ -43,7 +43,9 @@ export const authController = {
           number: user.number,
           role: user.role,
           walletbalance: user.walletbalance,
-          creditbalance: user.creditbalance,
+          expirybalance: user.expirybalance,
+          nonexpirybalance: user.nonexpirybalance,
+          bonusbalance: user.bonusbalance,
         },
       });
     } catch (err: any) {
@@ -86,7 +88,9 @@ export const authController = {
           number: user.number,
           role: user.role,
           walletbalance: user.walletbalance,
-          creditbalance: user.creditbalance,
+          expirybalance: user.expirybalance,
+          nonexpirybalance: user.nonexpirybalance,
+          bonusbalance: user.bonusbalance,
         },
       });
     } catch (err: any) {
@@ -96,29 +100,50 @@ export const authController = {
   },
 
 
-getById: async(req: Request,res:Response) =>{
-  const {id} = req.params;
-try{
-  const getusers = await User.findByPk(id);
-  if(!getusers){
-    return res.status(404).json({msg: 'User not found'});
-  }res.json(getusers)
-}catch(err: unknown){
-
-  if (err instanceof Error) {
-    console.error(err.message);
-    res.status(500).send('Server error');
-  } else {
-    console.error('An unknown error occurred');
-    res.status(500).send('Server error');
+  getById: async (req: Request, res: Response) => {
+    const { id } = req.params;
+  
+    try {
+      const getusers = await User.findByPk(id);
+      if (!getusers) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Calculate total main balance
+      const totalMainBalance = getusers.expirybalance + getusers.nonexpirybalance;
+  
+      // Prepare response
+      const userResponse = {
+        id: getusers.id,
+        username: getusers.username,
+        email: getusers.email,
+        number: getusers.number,
+        role: getusers.role,
+        walletbalance: getusers.walletbalance,
+        expirybalance: getusers.expirybalance,
+        nonexpirybalance: getusers.nonexpirybalance,
+        bonusbalance: getusers.bonusbalance,
+        totalMainBalance, // Include the total main balance
+        createdAt: getusers.createdAt,
+        updatedAt: getusers.updatedAt,
+      };
+  
+      res.json(userResponse);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
   }
-}
-
-}
+  
 ,
   updateUser: async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { username, email, password, number, walletbalance, creditbalance, role } = req.body;
+    const { username, email, password, number, walletbalance, expirybalance, nonexpirybalance,bonusbalance,role } = req.body;
 
     try {
       let user = await User.findByPk(id);
@@ -131,7 +156,9 @@ try{
       if (number) user.number = number;
       if (role) user.role = role;
       if (walletbalance !== undefined) user.walletbalance = walletbalance;
-      if (creditbalance !== undefined) user.creditbalance = creditbalance;
+      if (expirybalance !== undefined) user.expirybalance = expirybalance;
+      if (nonexpirybalance !== undefined) user.nonexpirybalance = nonexpirybalance;
+      if (bonusbalance !== undefined) user.bonusbalance = bonusbalance;
       if (password) {
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
@@ -148,7 +175,9 @@ try{
           number: user.number,
           role: user.role,
           walletbalance: user.walletbalance,
-          creditbalance: user.creditbalance,
+          expirybalance: user.expirybalance,
+          nonexpirybalance: user.nonexpirybalance,
+          bonusbalance: user.bonusbalance,
         },
       });
     } catch (err: any) {

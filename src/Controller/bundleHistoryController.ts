@@ -7,14 +7,40 @@ import WalletHistory from '../models/WalletHistory'; // Import WalletHistory to 
 export const bundleHistoryController = {
   // Create a new bundle history entry
   createWithNormalWallet: async (req: Request, res: Response) => {
-    const { userId, packageId, package_name, expiry,type, status,creditscore } = req.body;
-
+    const { userId, packageId, package_name, expiry, type, status, creditscore } = req.body;
+  
     try {
       // Validate required fields
       if (!userId || !packageId || !package_name || !expiry || !creditscore) {
-        return res.status(400).json({ msg: 'User ID, Package ID, Package Name, and Expiry are required' });
+        return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
       }
-
+  
+      // Fetch the user
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Get the package details
+      const selectedPackage = await Packages.findByPk(packageId);
+      if (!selectedPackage) {
+        return res.status(404).json({ msg: 'Package not found' });
+      }
+  
+      // Update the user's balance based on the type of package
+      if (type === 'expiry') {
+        user.expirybalance += selectedPackage.price; // Add package price to expiry balance
+      } else if (type === 'non-expiry') {
+        user.nonexpirybalance += selectedPackage.price; // Add package price to non-expiry balance
+      } else if (type === 'bonus') {
+        user.bonusbalance += selectedPackage.price; // Add package price to bonus balance
+      } else {
+        return res.status(400).json({ msg: 'Invalid package type' });
+      }
+  
+      // Save the updated user balance
+      await user.save();
+  
       // Create a new BundleHistory record
       const newBundle = await BundleHistory.create({
         userId,
@@ -25,13 +51,14 @@ export const bundleHistoryController = {
         creditscore,
         status: status || 'active', // Default to 'active' if not provided
       });
-
+  
       res.status(201).json(newBundle); 
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : 'Server error while creating bundle history');
       res.status(500).send('Server error');
     }
-  },
+  }
+,  
 
 
   createWithAppWallet: async (req: Request, res: Response) => {
@@ -43,15 +70,13 @@ export const bundleHistoryController = {
         return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
       }
   
-      // Fetch the total wallet balance for the user
-      const totalWalletBalance = await WalletHistory.sum('amount', { where: { userId } });
-  
-      // If the user has no wallet history, return an error
-      if (totalWalletBalance === null || totalWalletBalance <= 0) {
-        return res.status(404).json({ msg: 'No wallet history found for this user or wallet balance is zero' });
+      // Fetch the user
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
       }
   
-      // Get the package details (assuming Packages model has a field for the package cost)
+      // Get the package details
       const selectedPackage = await Packages.findByPk(packageId);
       if (!selectedPackage) {
         return res.status(404).json({ msg: 'Package not found' });
@@ -60,17 +85,25 @@ export const bundleHistoryController = {
       const packageCost = selectedPackage.price; // Assuming the package has a cost field
   
       // Check if the user has enough balance to make the purchase
-      if (totalWalletBalance < packageCost) {
+      if (user.walletbalance < packageCost) {
         return res.status(400).json({ msg: 'Insufficient wallet balance for this purchase' });
       }
   
       // Deduct the package cost from the user's wallet balance
-      // To keep a record of the wallet balance update, you can create a new entry
-      await WalletHistory.create({
-        userId,
-        amount: -packageCost, // This represents a deduction from the user's wallet
-        description: `Deduction for purchasing package ${package_name}`, // Description for the wallet entry
-      });
+      user.walletbalance -= packageCost; // Deduct the cost
+  
+      // Update the user's balance based on the type of package
+      if (type === 'expiry') {
+        user.expirybalance += packageCost; // Add to expiry balance
+      } else if (type === 'non-expiry') {
+        user.nonexpirybalance += packageCost; // Add to non-expiry balance
+      } else if (type === 'bonus') {
+        user.bonusbalance += packageCost; // Add to bonus balance
+      } else {
+        return res.status(400).json({ msg: 'Invalid package type' });
+      }
+  
+      await user.save(); // Save the updated user balance
   
       // Create a new BundleHistory record
       const newBundle = await BundleHistory.create({
@@ -83,12 +116,13 @@ export const bundleHistoryController = {
         status: status || 'active', // Default to 'active' if not provided
       });
   
-      res.status(201).json({ newBundle, remainingBalance: totalWalletBalance - packageCost });
+      res.status(201).json({ newBundle, remainingBalance: user.walletbalance });
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : 'Server error while creating bundle history');
       res.status(500).send('Server error');
     }
-  },
+  }
+,  
   
   
 

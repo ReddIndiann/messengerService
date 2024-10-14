@@ -156,14 +156,14 @@ create: async (req: Request, res: Response) => {
       const totalRecipients = recipientsArray.length;
 
       // Ensure user has enough credits for all recipients
-      if (user.creditbalance < totalRecipients) {
+      if (user.expirybalance < totalRecipients) {
           return res.status(400).json({
-              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.expirybalance}.`
           });
       }
 
       // Deduct credits based on the number of recipients
-      user.creditbalance -= totalRecipients;
+      user.expirybalance -= totalRecipients;
       await user.save();
 
       // Create the schedule message record
@@ -232,7 +232,7 @@ create: async (req: Request, res: Response) => {
       res.status(201).json({
           message: 'Message created and scheduled successfully',
           scheduleMessage,
-          creditbalance: user.creditbalance, // Include updated credit balance in the response
+          creditbalance: user.expirybalance, // Include updated credit balance in the response
       });
 
   } catch (err: unknown) {

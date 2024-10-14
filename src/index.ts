@@ -15,7 +15,7 @@ import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path
 import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as needed
 import PackagesController from './routes/packagesRoute'; // Adjust path as needed
 import BundleHistory from './routes/bundleHistoryRoutes';
-
+import CreditUsageController from './routes/creditusageRoute';
 
 const app = express();
 app.use(cors({
@@ -41,6 +41,7 @@ app.use('/api', developerRoutes);
 app.use('/wallet', WalletHistory);
  
 app.use('/packages', PackagesController);
+app.use('/creditusage', CreditUsageController);
 app.use('/bundle', BundleHistory);
 
 

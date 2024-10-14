@@ -62,14 +62,14 @@ export const sendMessageController = {
       const totalRecipients = recipientList.length;
   
       // Ensure the user has enough credits for all recipients
-      if (user.creditbalance < totalRecipients) {
+      if (user.expirybalance < totalRecipients) {
         return res.status(400).json({
-          message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+          message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.expirybalance}.`
         });
       }
   
       // Deduct credits based on the number of recipients
-      user.creditbalance -= totalRecipients;
+      user.expirybalance -= totalRecipients;
       await user.save();
   
       // Create the message with recipients as an array
@@ -105,11 +105,11 @@ export const sendMessageController = {
         message: 'Message created and sent successfully',
         sendMessage,
         apiResponse: response.data,
-        creditbalance: user.creditbalance, // Include updated credit balance in the response
+        creditbalance: user.expirybalance, // Include updated credit balance in the response
       });
   
       // Notify the user if their credit balance is now zero
-      if (user.creditbalance === 0) {
+      if (user.expirybalance === 0) {
         console.warn(`User ${user.username} has run out of credits.`);
         // Optionally, notify the user via email or SMS
       }

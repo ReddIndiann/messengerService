@@ -4,7 +4,7 @@ import User from '../models/User';
 
 export const WalletController = {
   create: async (req: Request, res: Response) => {
-    const { transactionid, userId, amount,note } = req.body;
+    const { transactionid, userId, amount, note } = req.body;
 
     try {
       // Check if user exists
@@ -13,12 +13,14 @@ export const WalletController = {
         return res.status(404).json({ msg: 'User not found' });
       }
 
-      // Check if a sender with the same name already exists for this user
-    
-      // Proceed with creating the sender if no duplicate is found
-      const wallet = await WalletHistory.create({ transactionid, userId, amount,note});
+      // Create the wallet entry
+      const wallet = await WalletHistory.create({ transactionid, userId, amount, note });
 
-      res.status(201).json(wallet);
+      // Update the user's wallet balance
+      user.walletbalance += amount; // Increase wallet balance by the amount
+      await user.save(); // Save the updated user
+
+      res.status(201).json({ wallet, updatedWalletBalance: user.walletbalance });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);

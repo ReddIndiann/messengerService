@@ -49,10 +49,10 @@ export const developerController = {
       // 1. Validate user
       const user = await User.findByPk(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-      if (user.creditbalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      if (user.expirybalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
   
       // 2. Deduct 1 credit and save user balance
-      user.creditbalance -= 1;
+      user.expirybalance -= 1;
       await user.save();
   
       // 3. Create a new message record
@@ -87,11 +87,11 @@ export const developerController = {
         message: 'Message sent successfully',
         sendMessage,
         apiResponse: response.data,
-        creditbalance: user.creditbalance,
+        creditbalance: user.expirybalance,
       });
   
       // Optional: Notify the user if they run out of credits
-      if (user.creditbalance === 0) {
+      if (user.expirybalance === 0) {
         console.warn(`User ${user.username} has run out of credits.`);
       }
   
@@ -122,10 +122,10 @@ export const developerController = {
       // Validate user
       const user = await User.findByPk(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-      if (user.creditbalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
+      if (user.expirybalance <= 0) return res.status(400).json({ message: 'No credits left. Please recharge your account.' });
   
       // Deduct 1 credit and save user balance
-      user.creditbalance -= 1;
+      user.expirybalance -= 1;
       await user.save();
   
       // Handle recipients as an array
@@ -189,7 +189,7 @@ export const developerController = {
       res.status(201).json({
         message: 'Message scheduled successfully',
         scheduleMessage,
-        creditbalance: user.creditbalance,
+        creditbalance: user.expirybalance,
       });
   
     } catch (err: unknown) {
@@ -267,48 +267,6 @@ export const developerController = {
       }
     }
   },
-
-  // createcontactgroup: async (req: Request, res: Response) => {
-  //   const { apikeyvalue } = req.headers; // Get the API key from the request headers
-  //   const { contactId, groupId } = req.body;
-
-  //   try {
-  //     // Validate API key and retrieve associated user ID
-  //     const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
-  //     if (!apiKey) {
-  //       return res.status(403).json({ msg: 'Invalid API key' });
-  //     }
-  //     const userId = apiKey.userId;
-
-  //     // Check if the contact belongs to the user
-  //     const contact = await Contact.findOne({ where: { id: contactId, userId } });
-  //     if (!contact) {
-  //       return res.status(404).json({ msg: 'Contact not found for this user' });
-  //     }
-
-  //     // Check if the group belongs to the user
-  //     const group = await Group.findOne({ where: { id: groupId, userId } });
-  //     if (!group) {
-  //       return res.status(404).json({ msg: 'Group not found for this user' });
-  //     }
-
-  //     // Create the contact-group association
-  //     const contactGroup = await ContactGroup.create({
-  //       contactId,
-  //       groupId,
-  //     });
-
-  //     res.status(201).json(contactGroup);
-  //   } catch (err: unknown) {
-  //     if (err instanceof Error) {
-  //       console.error(err.message);
-  //       res.status(500).send('Server error');
-  //     } else {
-  //       console.error('An unknown error occurred');
-  //       res.status(500).send('Server error');
-  //     }
-  //   }
-  // },
   
   createcontactgroup: async (req: Request, res: Response) => {
     const { apikeyvalue } = req.headers; // Get the API key from the request headers
@@ -442,14 +400,14 @@ export const developerController = {
         }
 
         // Ensure the user has enough credits for all recipients
-        if (user.creditbalance < totalRecipients) {
+        if (user.expirybalance < totalRecipients) {
             return res.status(400).json({
-                message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+                message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.expirybalance}.`
             });
         }
 
         // Deduct credits for each unique recipient
-        user.creditbalance -= totalRecipients;
+        user.expirybalance -= totalRecipients;
         await user.save();
 
         // Create the message with recipients as an array
@@ -486,11 +444,11 @@ export const developerController = {
             message: 'Message created and sent successfully',
             sendMessage,
             apiResponse: response.data,
-            creditbalance: user.creditbalance,  // Updated credit balance
+            creditbalance: user.expirybalance,  // Updated credit balance
         });
 
         // Optionally notify user if credits are depleted
-        if (user.creditbalance === 0) {
+        if (user.expirybalance === 0) {
             console.warn(`User ${user.username} has run out of credits.`);
             // Optionally send a notification
         }
@@ -540,14 +498,14 @@ scheduleMessageGroup: async (req: Request, res: Response) => {
       }
 
       // Ensure user has enough credits for all recipients
-      if (user.creditbalance < totalRecipients) {
+      if (user.expirybalance < totalRecipients) {
           return res.status(400).json({
-              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.creditbalance}.`
+              message: `Insufficient credits. You need ${totalRecipients} credits, but you only have ${user.expirybalance}.`
           });
       }
 
       // Deduct credits based on the number of recipients
-      user.creditbalance -= totalRecipients;
+      user.expirybalance -= totalRecipients;
       await user.save();
 
       // Create the schedule message record
@@ -616,7 +574,7 @@ scheduleMessageGroup: async (req: Request, res: Response) => {
       res.status(201).json({
           message: 'Message created and scheduled successfully',
           scheduleMessage,
-          creditbalance: user.creditbalance,  // Include updated credit balance in the response
+          creditbalance: user.expirybalance,  // Include updated credit balance in the response
       });
 
   } catch (err: unknown) {
