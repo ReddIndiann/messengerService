@@ -38,7 +38,7 @@ Packages.init(
     bonusrate: {
       type: DataTypes.FLOAT,
       allowNull: true,
-    },0000000000000000000000000
+    },
     rate: {
       type: DataTypes.FLOAT,
       allowNull: false,

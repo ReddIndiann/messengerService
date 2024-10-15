@@ -4,18 +4,18 @@ import Packages from '../models/packages';
 export const packagesController = {
   // Create a new package
   create: async (req: Request, res: Response) => {
-    const { name, type, price, rate, smscount, expiry, duration } = req.body;
+    const { name, type, price, rate, smscount, expiry,bonusrate, duration,userEntry } = req.body;
 
     // Basic validation
-    if (!name || !type || !price || !rate || !smscount || !expiry || !duration) {
-        return res.status(400).json({ msg: 'All fields are required' });
-    }
-
+    // if (!name || !type || !price || !rate || !smscount || !expiry || !duration) {
+    //     return res.status(400).json({ msg: 'All fields are required' });
+    // }
+//
     try {
         // Check if a package with the same name already exists
         const existingPackage = await Packages.findOne({
             where: { name },
-        });
+        });//in this component  create an input filed that accepts amount as input , use the rate to multiply the amount input to get the smscount and pass that to the payload
 
         if (existingPackage) {
             return res.status(400).json({ msg: 'A package with the same name already exists' });
@@ -26,9 +26,11 @@ export const packagesController = {
             name,
             type,
             price,
+            bonusrate,
             rate,
             smscount,
             expiry,
+            userEntry,
             duration,
         });
 
@@ -65,7 +67,7 @@ export const packagesController = {
       if (!packageDetails) {
         return res.status(404).json({ msg: 'Package not found' });
       }
-
+//should beon the card
       res.json(packageDetails);
     } catch (err: unknown) {
       if (err instanceof Error) {

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import WalletHistory from '../models/WalletHistory';
 import User from '../models/User';
-
+import { v4 as uuidv4 } from 'uuid';  
 export const WalletController = {
   create: async (req: Request, res: Response) => {
     const { transactionid, userId, amount, note } = req.body;
@@ -12,7 +12,7 @@ export const WalletController = {
       if (!user) {
         return res.status(404).json({ msg: 'User not found' });
       }
-
+      const transactionid = uuidv4();
       // Create the wallet entry
       const wallet = await WalletHistory.create({ transactionid, userId, amount, note });
 

@@ -35,6 +35,6 @@ CreditUsage.init(
     sequelize,
     tableName: 'creditusage',
   }
-);
+); 
 
 export default CreditUsage;

@@ -27,13 +27,19 @@ export const bundleHistoryController = {
         return res.status(404).json({ msg: 'Package not found' });
       }
   
+      // Check if the package price is valid
+      const packageCost = selectedPackage.price;
+      if (packageCost == null) {
+        return res.status(400).json({ msg: 'Invalid package price' });
+      }
+  
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
-        user.expirybalance += selectedPackage.price; // Add package price to expiry balance
+        user.expirybalance += packageCost; // Add package price to expiry balance
       } else if (type === 'non-expiry') {
-        user.nonexpirybalance += selectedPackage.price; // Add package price to non-expiry balance
+        user.nonexpirybalance += packageCost; // Add package price to non-expiry balance
       } else if (type === 'bonus') {
-        user.bonusbalance += selectedPackage.price; // Add package price to bonus balance
+        user.bonusbalance += packageCost; // Add package price to bonus balance
       } else {
         return res.status(400).json({ msg: 'Invalid package type' });
       }
@@ -52,13 +58,14 @@ export const bundleHistoryController = {
         status: status || 'active', // Default to 'active' if not provided
       });
   
-      res.status(201).json(newBundle); 
+      res.status(201).json(newBundle);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : 'Server error while creating bundle history');
       res.status(500).send('Server error');
     }
-  }
-,  
+  },
+  
+
 
 
   createWithAppWallet: async (req: Request, res: Response) => {
@@ -66,9 +73,9 @@ export const bundleHistoryController = {
   
     try {
       // Validate required fields
-      if (!userId || !packageId || !package_name || !expiry || !creditscore) {
-        return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
-      }
+      // if (!userId || !packageId || !package_name || !expiry || !creditscore) {
+      //   return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
+      // }
   
       // Fetch the user
       const user = await User.findByPk(userId);
@@ -82,7 +89,11 @@ export const bundleHistoryController = {
         return res.status(404).json({ msg: 'Package not found' });
       }
   
-      const packageCost = selectedPackage.price; // Assuming the package has a cost field
+      // Check if the package price is valid
+      const packageCost = selectedPackage.price;
+      if (packageCost == null) {
+        return res.status(400).json({ msg: 'Invalid package price' });
+      }
   
       // Check if the user has enough balance to make the purchase
       if (user.walletbalance < packageCost) {
@@ -121,8 +132,9 @@ export const bundleHistoryController = {
       console.error(err instanceof Error ? err.message : 'Server error while creating bundle history');
       res.status(500).send('Server error');
     }
-  }
-,  
+  },
+  
+
   
   
 
