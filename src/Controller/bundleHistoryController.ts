@@ -33,16 +33,22 @@ export const bundleHistoryController = {
         return res.status(400).json({ msg: 'Invalid package price' });
       }
   
+      // Calculate the bonus score (bonusrate as a percentage of smscount)
+      const bonusScore = selectedPackage.bonusrate * (selectedPackage.smscount || 0) / 100;
+  
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
         user.expirybalance += packageCost; // Add package price to expiry balance
       } else if (type === 'non-expiry') {
         user.nonexpirybalance += packageCost; // Add package price to non-expiry balance
       } else if (type === 'bonus') {
-        user.bonusbalance += packageCost; // Add package price to bonus balance
+        user.bonusbalance += packageCost; // Continue to add package price to bonus balance
       } else {
         return res.status(400).json({ msg: 'Invalid package type' });
       }
+  
+      // Regardless of the package type, add the calculated bonus score to the user's bonus balance
+      user.bonusbalance += bonusScore;
   
       // Save the updated user balance
       await user.save();
@@ -55,6 +61,7 @@ export const bundleHistoryController = {
         expiry,
         type,
         creditscore,
+        bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
       });
   
@@ -65,6 +72,7 @@ export const bundleHistoryController = {
     }
   },
   
+  
 
 
 
@@ -72,11 +80,6 @@ export const bundleHistoryController = {
     const { userId, packageId, package_name, expiry, type, status, creditscore } = req.body;
   
     try {
-      // Validate required fields
-      // if (!userId || !packageId || !package_name || !expiry || !creditscore) {
-      //   return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
-      // }
-  
       // Fetch the user
       const user = await User.findByPk(userId);
       if (!user) {
@@ -101,7 +104,10 @@ export const bundleHistoryController = {
       }
   
       // Deduct the package cost from the user's wallet balance
-      user.walletbalance -= packageCost; // Deduct the cost
+      user.walletbalance -= packageCost;
+  
+      // Calculate the bonus score (bonusrate as a percentage of smscount)
+      const bonusScore = selectedPackage.bonusrate * (selectedPackage.smscount || 0) / 100;
   
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
@@ -109,10 +115,13 @@ export const bundleHistoryController = {
       } else if (type === 'non-expiry') {
         user.nonexpirybalance += packageCost; // Add to non-expiry balance
       } else if (type === 'bonus') {
-        user.bonusbalance += packageCost; // Add to bonus balance
+        user.bonusbalance += packageCost; // Continue to add package price to bonus balance
       } else {
         return res.status(400).json({ msg: 'Invalid package type' });
       }
+  
+      // Regardless of the package type, add the calculated bonus score to the user's bonus balance
+      user.bonusbalance += bonusScore;
   
       await user.save(); // Save the updated user balance
   
@@ -124,6 +133,7 @@ export const bundleHistoryController = {
         expiry,
         type,
         creditscore,
+        bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
       });
   
@@ -133,6 +143,8 @@ export const bundleHistoryController = {
       res.status(500).send('Server error');
     }
   },
+  
+  
   
 
   

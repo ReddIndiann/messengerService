@@ -1,19 +1,18 @@
 import cron from 'node-cron';
 import BundleHistory from '../models/BundleHistory';
-import User from '../models/User'; // Your User model
+import User from '../models/User';
 import { Op } from 'sequelize';
 
 const checkExpiredBundles = async () => {
   try {
-    // Step 1: Find all bundle history entries that are still active and whose expiry date has passed
     const expiredBundles = await BundleHistory.findAll({
       where: {
         status: 'active',
         expiry: {
-          [Op.lt]: new Date(), // Find bundles where expiry is less than the current date
+          [Op.lt]: new Date(),
         },
         type: {
-          [Op.in]: ['expiry', 'bonus'], // Only check for expiry and bonus types
+          [Op.in]: ['expiry', 'bonus'],
         },
       },
     });
@@ -23,18 +22,16 @@ const checkExpiredBundles = async () => {
       return;
     }
 
-    // Step 2: Loop through each expired bundle and mark it as inactive
-    const updatedUserBalances: Record<string, { bonus: number; expiry: number }> = {}; // Store user balances to update
+    const updatedUserBalances: Record<string, { bonus: number; expiry: number }> = {};
 
     for (const bundle of expiredBundles) {
       const userId = bundle.userId;
-      const creditscore = Number(bundle.creditscore) || 0; // Ensure creditscore is a number
+      const creditscore = Number(bundle.creditscore) || 0;
+      const bonusscore = Number(bundle.bonusscore) || 0;
 
-      // Mark the bundle as inactive
       bundle.status = 'inactive';
       await bundle.save();
 
-      // Update the user's balance
       if (!updatedUserBalances[userId]) {
         updatedUserBalances[userId] = { bonus: 0, expiry: 0 };
       }
@@ -44,14 +41,14 @@ const checkExpiredBundles = async () => {
       } else if (bundle.type === 'bonus') {
         updatedUserBalances[userId].bonus -= creditscore;
       }
+
+      // Deduct bonusscore for both expiry and bonus types
+      updatedUserBalances[userId].bonus -= bonusscore;
     }
 
-    // Step 3: Update users' balances
     for (const [userId, { bonus, expiry }] of Object.entries(updatedUserBalances)) {
       const user = await User.findByPk(userId);
-
       if (user) {
-        // Update bonus and expiry balances
         user.bonusbalance += bonus;
         user.expirybalance += expiry;
         await user.save();
@@ -67,4 +64,4 @@ const checkExpiredBundles = async () => {
 // Schedule the job to run every day at midnight
 cron.schedule('* * * * *', checkExpiredBundles);
 
-export default checkExpiredBundles; 
+export default checkExpiredBundles;

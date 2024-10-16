@@ -9,8 +9,8 @@ class BundleHistory extends Model {
   public packageId!: number;
   public type!: string;
   public package_name!: string;
-  
   public creditscore!: string;
+  public bonusscore!: string;
   public expiry!: Date;
   public status!: string;
   public readonly createdAt!: Date;
@@ -54,6 +54,10 @@ package_name: { // Changed type to STRING
 creditscore: { // Changed type to STRING
     type: DataTypes.INTEGER,
     allowNull: false,
+},
+bonusscore: { // Changed type to STRING
+  type: DataTypes.INTEGER,
+  allowNull: true,
 },
     expiry: {
       type: DataTypes.DATE,
