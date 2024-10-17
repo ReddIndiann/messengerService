@@ -339,12 +339,12 @@ export const developerController = {
   },
   
   createcontactgroup: async (req: Request, res: Response) => {
-    const { apikeyvalue } = req.headers; // Get the API key from the request headers
+    const { apikey } = req.headers; // Get the API key from the request headers
     const { contactNumber, groupName } = req.body; // Extract contact number and group name from request body
   
     try {
       // Validate API key and retrieve associated user ID
-      const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
+      const apiKey = await ApiKeys.findOne({ where: { apikey: apikey } });
       if (!apiKey) {
         return res.status(403).json({ msg: 'Invalid API key' });
       }
@@ -381,12 +381,12 @@ export const developerController = {
   },
   
   createmulticontactgroup: async (req: Request, res: Response) => {
-    const { apikeyvalue } = req.headers; // Get the API key from the request headers
+    const { apikey } = req.headers; // Get the API key from the request headers
     const { contactNumbers, groupName } = req.body; // Extract an array of contact numbers and group name from the request body
   
     try {
       // Validate API key and retrieve associated user ID
-      const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
+      const apiKey = await ApiKeys.findOne({ where: { apikey: apikey } });
       if (!apiKey) {
         return res.status(403).json({ msg: 'Invalid API key' });
       }

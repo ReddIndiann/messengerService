@@ -39,6 +39,7 @@ User.init(
     number: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     role: {
       type: DataTypes.STRING,

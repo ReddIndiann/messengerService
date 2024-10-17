@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Packages from '../models/packages';
+import BundleHistory from '../models/BundleHistory';
 
 export const packagesController = {
   // Create a new package
@@ -123,9 +124,11 @@ export const packagesController = {
       if (!packageDetails) {
         return res.status(404).json({ msg: 'Package not found' });
       }
-
+      await BundleHistory.destroy({
+        where: { packageId: id }
+      });
       await packageDetails.destroy();
-
+ 
       res.json({ msg: 'Package deleted successfully' });
     } catch (err: unknown) {
       if (err instanceof Error) {

@@ -15,11 +15,11 @@ const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
 export const developergetController = {
 
     getSentMessageByUserId: async (req: Request, res: Response) => {
-        const { apikeyvalue } = req.headers; // Get the API key from the request headers
+        const { apikey } = req.headers; // Get the API key from the request headers
     
         try {
           // 1. Find the API key to get the associated user ID
-          const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
+          const apiKey = await ApiKeys.findOne({ where: { apikey: apikey } });
           if (!apiKey) {
             return res.status(403).json({ msg: 'Invalid API key' });
           }
@@ -47,11 +47,11 @@ export const developergetController = {
         }
       },
       getScheduleMessageByUserId: async (req: Request, res: Response) => {
-        const { apikeyvalue } = req.headers; // Get the API key from the request headers
+        const { apikey } = req.headers; // Get the API key from the request headers
     
         try {
           // 1. Find the API key to get the associated user ID
-          const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
+          const apiKey = await ApiKeys.findOne({ where: { apikey: apikey } });
           if (!apiKey) {
             return res.status(403).json({ msg: 'Invalid API key' });
           }
@@ -79,11 +79,11 @@ export const developergetController = {
         }
       },
       getContactsByUserId: async (req: Request, res: Response) => {
-        const { apikeyvalue } = req.headers; // Get the API key from the request headers
+        const { apikey } = req.headers; // Get the API key from the request headers
     
         try {
           // 1. Find the API key to get the associated user ID
-          const apiKey = await ApiKeys.findOne({ where: { keyvalue: apikeyvalue } });
+          const apiKey = await ApiKeys.findOne({ where: { apikey: apikey } });
           if (!apiKey) {
             return res.status(403).json({ msg: 'Invalid API key' });
           }

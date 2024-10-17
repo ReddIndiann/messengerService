@@ -4,6 +4,7 @@ const router = express.Router();
 
 router.post('/create', WalletController.create);
 router.get('/', WalletController.getAll);
+router.get('/amount', WalletController.getAllAmount);
 router.get('/:id', WalletController.getById);
 router.put('/:id', WalletController.update);
 router.delete('/:id', WalletController.delete);

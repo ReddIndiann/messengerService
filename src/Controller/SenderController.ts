@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import Sender from '../models/Sender';
 import User from '../models/User';
-
+import ScheduleMessage from '../models/ScheduleMessage';
+import SendMessage from '../models/SendMessage';
 export const senderController = {
   create: async (req: Request, res: Response) => {
     const { name, userId, purpose } = req.body;
@@ -115,7 +116,12 @@ export const senderController = {
       if (!sender) {
         return res.status(404).json({ msg: 'Sender not found' });
       }
-
+      await ScheduleMessage.destroy({
+        where: { senderId: id }
+      });
+      await SendMessage.destroy({
+        where: { senderId: id }
+      });
       await sender.destroy();
 
       res.json({ msg: 'Sender deleted successfully' });

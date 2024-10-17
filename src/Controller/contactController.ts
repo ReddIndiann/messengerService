@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Contact from '../models/Contact';
 import ContactGroup from '../models/ContactGroup';
 import Group from '../models/Group';
+import { Op } from 'sequelize';
 
 
 export const contactController = {
@@ -79,8 +80,6 @@ export const contactController = {
     }
   },
 
-
-
   getById: async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -120,7 +119,42 @@ export const contactController = {
       }
     }
   },
-
+  searchByNameAndUserId: async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { name } = req.query; // Assuming name is passed as a query parameter
+  
+    if (!name) {
+      return res.status(400).json({ msg: 'Name query parameter is required' });
+    }
+  
+    try {
+      // Search for contacts by userId and name (first or last)
+      const contacts = await Contact.findAll({
+        where: {
+          userId,
+          [Op.or]: [
+            { firstname: { [Op.iLike]: `%${name}%` } }, // Case-insensitive match
+            { lastname: { [Op.iLike]: `%${name}%` } },
+          ],
+        },
+      });
+  
+      if (contacts.length === 0) {
+        return res.status(404).json({ msg: 'No contacts found for this user with the given name' });
+      }
+  
+      res.json(contacts);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
+  },
+  
 
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -161,8 +195,14 @@ export const contactController = {
         return res.status(404).json({ msg: 'Contact not found' });
       }
 
+      // First, delete all associated records in the contact_groups table
+      await ContactGroup.destroy({
+        where: { contactId: id }
+      });
+
+      // Now delete the contact
       await contact.destroy();
-      res.json({ msg: 'Contact deleted successfully' });
+      res.json({ msg: 'Contact and associated group links deleted successfully' });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);

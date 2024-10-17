@@ -46,7 +46,27 @@ export const WalletController = {
       }
     }
   },
-
+  getAllAmount: async (req: Request, res: Response) => {
+    try {
+      // Fetch all wallet histories
+      const wallet = await WalletHistory.findAll();
+  
+      // Calculate the total sum of the 'amount' field
+      const totalAmount = await WalletHistory.sum('amount');
+  
+      // Respond with both wallet histories and the sum of the amounts
+      res.json({ wallet, totalAmount });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
+  },
+  
   getById: async (req: Request, res: Response) => {
     const { id } = req.params;
 

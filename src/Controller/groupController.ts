@@ -4,41 +4,7 @@ import Contact from '../models/Contact';
 import ContactGroup from '../models/ContactGroup';
 
 export const groupController = {
-  // create: async (req: Request, res: Response) => {
-  //   const { groupName, userId } = req.body;
 
-  //   try {
-  //     // Check if a group with the same name already exists for this user
-  //     const existingGroup = await Group.findOne({
-  //       where: {
-  //         groupName,
-  //         userId,
-  //       },
-  //     });
-
-  //     if (existingGroup) {
-  //       return res.status(400).json({
-  //         msg: 'A group with the same name already exists for this user.',
-  //       });
-  //     }
-
-  //     // Proceed with creating the group if no duplicate is found
-  //     const group = await Group.create({
-  //       groupName,
-  //       userId,
-  //     });
-
-  //     res.status(201).json(group);
-  //   } catch (err: unknown) {
-  //     if (err instanceof Error) {
-  //       console.error(err.message);
-  //       res.status(500).send('Server error');
-  //     } else {
-  //       console.error('An unknown error occurred');
-  //       res.status(500).send('Server error');
-  //     }
-  //   }
-  // },
    create : async (req: Request, res: Response) => {
     const { groupName, userId } = req.body;
   
@@ -210,8 +176,14 @@ export const groupController = {
         return res.status(404).json({ msg: 'Group not found' });
       }
 
+      // First, delete all associated records in the contact_groups table
+      await ContactGroup.destroy({
+        where: { groupId: id }
+      });
+
+      // Now delete the group
       await group.destroy();
-      res.json({ msg: 'Group deleted successfully' });
+      res.json({ msg: 'Group and associated contact links deleted successfully' });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -222,6 +194,7 @@ export const groupController = {
       }
     }
   },
+
 
   getContactsByGroupId: async (req: Request, res: Response) => {
     const { groupId } = req.params;

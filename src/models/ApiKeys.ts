@@ -7,7 +7,7 @@ class ApiKeys extends Model {
     public id!: number;
     public name!: string;
     public userId!: number;
-    public keyvalue!: string;
+    public apikey!: string;
     public status!: string;
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -34,7 +34,7 @@ ApiKeys.init(
           key: 'id',
         },
       },
-      keyvalue: {
+      apikey: {
         type: DataTypes.STRING,
         allowNull: false,
       },
