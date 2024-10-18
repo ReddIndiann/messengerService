@@ -8,8 +8,8 @@ import { validateSenderAndApiKey } from '../middleware/checkApiKeyAndSenderId';
 const router = express.Router();
 
 // Developer API that checks senderId and apikey in headers
-router.post('/developer/send', validateSenderAndApiKey, developerController.sendMessage);
-router.post('/developer/schedule', validateSenderAndApiKey, developerController.scheduleMessage);
+router.post('/developer/sendmessage', validateSenderAndApiKey, developerController.sendMessage);
+router.post('/developer/schedulemessage', validateSenderAndApiKey, developerController.scheduleMessage);
 router.post('/developer/createcontact', validateApiKey, developerController.developerCreateContact);
 router.post('/developer/createcontactgroup', validateApiKey, developerController.createcontactgroup); 
 router.post('/developer/createmulticontactgroup', validateApiKey, developerController.createmulticontactgroup); 

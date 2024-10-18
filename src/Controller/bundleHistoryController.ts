@@ -34,7 +34,7 @@ export const bundleHistoryController = {
       }
   
       // Calculate the bonus score (bonusrate as a percentage of smscount)
-      const bonusScore = selectedPackage.bonusrate * (selectedPackage.smscount || 0) / 100;
+      const bonusScore = selectedPackage.bonusrate * (creditscore || 0) / 100;
   
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
@@ -140,7 +140,7 @@ export const bundleHistoryController = {
       user.walletbalance -= packageCost;
   
       // Calculate the bonus score (bonusrate as a percentage of smscount)
-      const bonusScore = selectedPackage.bonusrate * (selectedPackage.smscount || 0) / 100;
+      const bonusScore = selectedPackage.bonusrate * (creditscore || 0) / 100;
   
       // Update the user's balance based on the type of package
       if (type === 'expiry') {

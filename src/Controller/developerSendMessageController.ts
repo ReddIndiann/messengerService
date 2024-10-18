@@ -80,7 +80,7 @@ export const developerController = {
       }
   
       if (!deducted) {
-        return res.status(400).json({ message: 'Insufficient credits for this operation.' });
+        return res.status(400).json({ message: 'insufficient credit balance.' });
       }
   
       await user.save();
@@ -152,7 +152,7 @@ export const developerController = {
   scheduleMessage: async (req: Request, res: Response) => {
     const { recipients, content, dateScheduled, timeScheduled, recursion } = req.body;
     const { userId, sender } = req.body; // Using sender object from middleware
-  
+   
     try {
       // Validate user
       const user = await User.findByPk(userId);
