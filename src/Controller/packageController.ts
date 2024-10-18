@@ -7,10 +7,10 @@ export const packagesController = {
   create: async (req: Request, res: Response) => {
     const { name, type, price, rate, smscount, expiry,bonusrate, duration,userEntry } = req.body;
 
-    // Basic validation
-    // if (!name || !type || !price || !rate || !smscount || !expiry || !duration) {
-    //     return res.status(400).json({ msg: 'All fields are required' });
-    // }
+  
+    if (!name || !type) {
+        return res.status(400).json({ msg: 'name and type are required' });
+    }
 //
     try {
         // Check if a package with the same name already exists

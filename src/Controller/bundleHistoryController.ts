@@ -38,11 +38,11 @@ export const bundleHistoryController = {
   
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
-        user.expirybalance += packageCost; // Add package price to expiry balance
+        user.expirybalance += creditscore; // Add package price to expiry balance
       } else if (type === 'non-expiry') {
-        user.nonexpirybalance += packageCost; // Add package price to non-expiry balance
+        user.nonexpirybalance += creditscore; // Add package price to non-expiry balance
       } else if (type === 'bonus') {
-        user.bonusbalance += packageCost; // Continue to add package price to bonus balance
+        user.bonusbalance += creditscore; // Continue to add package price to bonus balance
       } else {
         return res.status(400).json({ msg: 'Invalid package type' });
       }
@@ -73,7 +73,40 @@ export const bundleHistoryController = {
   },
   
   
-
+  deductFromWallet: async (req: Request, res: Response) => {
+    const { userId, amount, type } = req.body;
+  
+    try {
+      // Validate required fields
+      if (!userId || !amount || !type) {
+        return res.status(400).json({ msg: 'User ID, amount, and type are required' });
+      }
+  
+      // Fetch the user
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Check if the user has sufficient balance
+      if (user.walletbalance < amount) {
+        return res.status(400).json({ msg: 'Insufficient wallet balance' });
+      }
+  
+      // Deduct the amount from the user's wallet balance
+      user.walletbalance -= amount;
+  
+      // Save the updated user balance
+      await user.save();
+  
+      res.status(200).json({ msg: 'Amount deducted successfully', user });
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : 'Server error while deducting from wallet balance');
+      res.status(500).send('Server error');
+    }
+  },
+  
+  
 
 
   createWithAppWallet: async (req: Request, res: Response) => {
@@ -111,11 +144,11 @@ export const bundleHistoryController = {
   
       // Update the user's balance based on the type of package
       if (type === 'expiry') {
-        user.expirybalance += packageCost; // Add to expiry balance
+        user.expirybalance += creditscore; // Add to expiry balance
       } else if (type === 'non-expiry') {
-        user.nonexpirybalance += packageCost; // Add to non-expiry balance
+        user.nonexpirybalance += creditscore; // Add to non-expiry balance
       } else if (type === 'bonus') {
-        user.bonusbalance += packageCost; // Continue to add package price to bonus balance
+        user.bonusbalance += creditscore; // Continue to add package price to bonus balance
       } else {
         return res.status(400).json({ msg: 'Invalid package type' });
       }

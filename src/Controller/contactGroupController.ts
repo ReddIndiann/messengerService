@@ -45,13 +45,26 @@ const handleApiError = (apiError: any, res: Response) => {
 export const contactGroupController = {
   create: async (req: Request, res: Response) => {
     const { contactId, groupId } = req.body;
-
+  
     try {
+      // Check if the contact is already in the group
+      const existingContactGroup = await ContactGroup.findOne({
+        where: {
+          contactId,
+          groupId,
+        },
+      });
+  
+      if (existingContactGroup) {
+        return res.status(400).json({ message: 'Contact is already in this group' });
+      }
+  
+      // If not, create the new contact-group relationship
       const contactGroup = await ContactGroup.create({
         contactId,
         groupId,
       });
-
+  
       res.status(201).json(contactGroup);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -63,6 +76,7 @@ export const contactGroupController = {
       }
     }
   },
+  
 
   getAll: async (req: Request, res: Response) => {
     try {
