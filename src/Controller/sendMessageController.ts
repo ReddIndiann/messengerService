@@ -9,6 +9,14 @@ const endPoint = 'https://api.mnotify.com/api/sms/quick';
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
 
 
+interface Message {
+  id: number; // Example property, adjust as necessary
+  content: string; // Example property, adjust as necessary
+  createdAt: Date; // Assuming this is your date field
+  // Add any other relevant fields
+}
+
+
 const findSenderAndUser = async (senderId: number, userId: number) => {
   const sender = await Sender.findByPk(senderId);
   const user = await User.findByPk(userId);
@@ -266,64 +274,70 @@ export const sendMessageController = {
 
   getTotalMessagesAndRecipients: async (req: Request, res: Response) => {
     try {
-        // Fetch all sent messages
-        const sentMessages = await SendMessage.findAll();
-        
-        // Fetch all scheduled messages
-        const scheduledMessages = await ScheduleMessage.findAll();
-
-        // Initialize an object to track counts per month
-        const monthlyData: { [key: string]: { totalMessagesSent: number; uniqueRecipients: Set<string> } } = {};
-
-        // Helper function to process messages
-        const processMessages = (messages: any[], messageType: string) => {
-            messages.forEach((message) => {
-                // Extract the year and month from createdAt or scheduledTime
-                const date = messageType === 'sent' ? message.createdAt : message.scheduledTime;
-                const monthYear = new Date(date).toISOString().slice(0, 7); // Format: YYYY-MM
-
-                // Initialize the monthYear entry if it doesn't exist
-                if (!monthlyData[monthYear]) {
-                    monthlyData[monthYear] = { totalMessagesSent: 0, uniqueRecipients: new Set<string>() };
-                }
-
-                // Increment the total messages sent
-                monthlyData[monthYear].totalMessagesSent += 1;
-
-                // Add unique recipients to the set
-                if (Array.isArray(message.recipients)) {
-                    message.recipients.forEach((recipient: any) => {
-                        monthlyData[monthYear].uniqueRecipients.add(recipient);
-                    });
-                }
+      // Fetch all users
+      const users = await User.findAll();
+  
+      // Initialize an object to track counts per user
+      const userData: { [key: string]: { totalMessagesSent: number; uniqueRecipients: Set<string> } } = {};
+  
+      // Fetch all sent and scheduled messages once
+      const sentMessages = await SendMessage.findAll();
+      const scheduledMessages = await ScheduleMessage.findAll();
+  
+      // Helper function to process messages
+      const processMessages = (messages: any[]) => {
+        messages.forEach((message) => {
+          const userId = message.userId; // Assuming the message contains the userId
+          const date = message.createdAt;
+  
+          if (!date || isNaN(new Date(date).getTime())) {
+            console.warn(`Invalid date encountered for message ID: ${message.id}`);
+            return; // Skip processing if the date is invalid
+          }
+  
+          const monthYear = new Date(date).toISOString().slice(0, 7); // Format: YYYY-MM
+  
+          // Initialize the userData entry if it doesn't exist
+          if (!userData[userId]) {
+            userData[userId] = { totalMessagesSent: 0, uniqueRecipients: new Set<string>() };
+          }
+  
+          // Increment total messages sent
+          userData[userId].totalMessagesSent += 1;
+  
+          // Add unique recipients if present
+          if (Array.isArray(message.recipients)) {
+            message.recipients.forEach((recipient: any) => {
+              userData[userId].uniqueRecipients.add(recipient);
             });
-        };
-
-        // Process sent messages
-        processMessages(sentMessages, 'sent');
-
-        // Process scheduled messages
-        processMessages(scheduledMessages, 'scheduled');
-
-        // Prepare the final response data
-        const responseData = Object.entries(monthlyData).map(([monthYear, data]) => ({
-            monthYear,
-            totalMessagesSent: data.totalMessagesSent,
-            totalRecipientsCount: data.uniqueRecipients.size,
-        }));
-
-        // Send response
-        res.json(responseData);
+          }
+        });
+      };
+  
+      // Process both sent and scheduled messages
+      processMessages(sentMessages);
+      processMessages(scheduledMessages);
+  
+      // Prepare the final response data
+      const responseData = Object.entries(userData).map(([userId, data]) => ({
+        userId,
+        totalMessagesSent: data.totalMessagesSent,
+        totalRecipientsCount: data.uniqueRecipients.size,
+      }));
+  
+      // Send response
+      res.json(responseData);
     } catch (err: unknown) {
-        if (err instanceof Error) {
-            console.error(err.message);
-            res.status(500).send('Server error');
-        } else {
-            console.error('An unknown error occurred');
-            res.status(500).send('Server error');
-        }
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
     }
-}
+  }
+  
 
   
 ,  
@@ -406,5 +420,39 @@ getTotalUserMessagesAndRecipients: async (req: Request, res: Response) => {
   }
 },
 
-  
-};
+ getAllMessages :async (req: Request, res: Response) => {
+  try {
+    const [sendMessages, scheduleMessages] = await Promise.all([
+      SendMessage.findAll(),
+      ScheduleMessage.findAll(),
+    ]);
+
+    const combinedMessages: Message[] = [...sendMessages, ...scheduleMessages];
+
+    // Function to group messages by month
+    const groupByMonth = (messages: Message[]) => {
+      return messages.reduce((acc: Record<string, Message[]>, message) => {
+        const date = new Date(message.createdAt); // Assuming 'createdAt' is the timestamp field
+        const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
+
+        if (!acc[monthYear]) {
+          acc[monthYear] = [];
+        }
+        acc[monthYear].push(message);
+        return acc;
+      }, {});
+    };
+
+    const messagesByMonth = groupByMonth(combinedMessages);
+
+    res.json(messagesByMonth);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error(err.message);
+      res.status(500).send('Server error');
+    } else {
+      console.error('An unknown error occurred');
+      res.status(500).send('Server error');
+    }
+  }
+},};

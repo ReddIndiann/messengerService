@@ -49,7 +49,7 @@ User.init(
     walletbalance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 100,
+      defaultValue: 0,
     },
     expirybalance: {
       type: DataTypes.INTEGER,
