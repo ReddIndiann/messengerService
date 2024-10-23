@@ -85,7 +85,7 @@ export const scheduleMessageController = {
         dateScheduled,
         timeScheduled,
         recursion,
-        status: 'Scheduled', // Initial status
+        status: 'pending', // Initial status
       });
 
       // Schedule the cron job

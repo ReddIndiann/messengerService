@@ -8,7 +8,7 @@ router.post('/signup', authController.register);
 router.post('/signin', authController.signin);
 router.get('/',authController.getAll)
 router.get('/:id',authController.getById)
-router.put('/users/:id/change-password', authController.changePassword);
+router.put('/change-password/:id', authController.changePassword);
 
 // router.put('/update/:id', auth, authorizeRole(['admin', 'user']), authController.updateUser);
 router.put('/update/:id', authController.updateUser);

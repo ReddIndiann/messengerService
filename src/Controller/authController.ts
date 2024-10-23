@@ -14,6 +14,10 @@ export const authController = {
       if (user) {
         return res.status(400).json({ msg: 'User already exists' });
       }
+      let usernum = await User.findOne({ where: { number } });
+      if (usernum) {
+        return res.status(400).json({ msg: 'Number already belongs to a user' });
+      }
 
       const hashedPassword = await bcrypt.hash(password, 10);
       user = await User.create({
@@ -55,17 +59,17 @@ export const authController = {
   },
 
   signin: async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { number, password } = req.body;
 
     try {
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ where: { number } });
       if (!user) {
-        return res.status(400).json({ msg: 'Wrong Email or Password ' });
+        return res.status(400).json({ msg: 'Wrong number or Password ' });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res.status(400).json({ msg: 'Wrong Email or Password' });
+        return res.status(400).json({ msg: 'Wrong number or Password' });
       }
 
       const payload = {
@@ -80,7 +84,7 @@ export const authController = {
       });
 
       res.json({
-        token,
+       
         user: {
           id: user.id,
           username: user.username,
