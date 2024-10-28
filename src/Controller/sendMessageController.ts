@@ -117,7 +117,7 @@ export const sendMessageController = {
       // Prepare data for external API call
       const data = {
         recipient: recipientList,
-        sender: sender.name,
+        sender: "Daniel",
         message: content,
         is_schedule: 'false',
         schedule_date: '',

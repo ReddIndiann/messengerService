@@ -97,7 +97,7 @@ export const scheduleMessageController = {
           // Prepare data for mNotify API
           const data = {
             recipient: recipientsArray,
-            sender: sender.name,
+            sender: "Daniel",
             message: content,
             is_schedule: 'false',
           };

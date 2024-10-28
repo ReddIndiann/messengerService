@@ -9,6 +9,7 @@ import scheduleMessageRoutes from './routes/ScheduleMessageRoutes';
 import sendMessageRoutes from './routes/sendMessageRoutes';
 import contactRoutes from './routes/contactRoutes';
 import groupRoutes from './routes/groupRoutes';
+import optRoutes from './routes/otpRoutes';
 import contactGroupRoutes from './routes/ContactGroupRoutes';
 import apiKeysRoutes from  './routes/apiKeysRoutes';
 import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
@@ -18,6 +19,7 @@ import BundleHistory from './routes/bundleHistoryRoutes';
 import CreditUsageRoute from './routes/creditusageRoute';
 import CreditUsageOrderRoute from  './routes/creditusageorderRoute';
 import checkExpiredBundles from './Controller/expirycheck';
+import { OtpController } from './Controller/otpController';
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, you can restrict it later
@@ -40,6 +42,7 @@ app.use('/contactgroups', contactGroupRoutes);
 app.use('/apikeys', apiKeysRoutes);
 app.use('/api', developerRoutes);
 app.use('/wallet', WalletHistory);
+app.use('/otp', optRoutes);
  
 app.use('/packages', PackagesController);
 app.use('/creditusage', CreditUsageRoute);
