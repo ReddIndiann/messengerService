@@ -71,13 +71,15 @@ export const authController = {
           bonusbalance: user.bonusbalance,
         },
       });
+
+      let namee = user.username
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: user.email,
         subject: 'Welcome to Kalert ',
         text: `Hello and welcome to Kalert!
 
-Thank you for registering! We're excited to have you join our community.
+Dear ${namee}, Thank you for registering! We're excited to have you join our community.
 
 If you have any questions or need assistance, our support team is here to help. Enjoy your experience with Kalert!
 

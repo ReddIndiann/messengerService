@@ -61,3 +61,18 @@ app.listen(port, () => {
   }
 });
 
+
+
+
+
+
+// DB_NAME=mess
+// DB_USER=root
+// DB_PASSWORD=developer123
+// DB_HOST=localhost
+// DB_DIALECT=mysql
+// JWT_SECERET=secret
+// MNOTIFY_APIKEY=W4MBdmIW4jWesAsHF18vod04F
+// EMAIL_USER=odaniel.ac@st.vvu.edu.gh
+// EMAIL_PASS=yxdz vtlj lotr oegv
+// HUNTER_API_KEY=abcbd06fe31a540686153d13117ad11f0a68f1ea
