@@ -50,15 +50,19 @@ const transporter = nodemailer.createTransport({
 export const UserController = {
   // 1. Send OTP for registration
   sendOtp: async (req: Request, res: Response) => {
-    const { email } = req.body;
+    const { email, number } = req.body;
 
-    try {
-      // Check if the user already exists
-      let user = await User.findOne({ where: { email } });
-      if (user) {
-        return res.status(400).json({ msg: 'User already exists' });
-      }
+  try {
+    // Check if the user already exists by email or number
+    let userByEmail = await User.findOne({ where: { email } });
+    let userByNumber = await User.findOne({ where: { number } });
 
+    if (userByEmail) {
+      return res.status(400).json({ msg: 'Email is already registered' });
+    }
+    if (userByNumber) {
+      return res.status(400).json({ msg: 'Number is already registered' });
+    }
       // Generate a 6-digit OTP
       const generatedOtp = crypto.randomInt(100000, 999999).toString();
 
@@ -74,7 +78,7 @@ export const UserController = {
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your Registration OTP',
-        text: `Your OTP for registration is ${generatedOtp}. It is valid for 10 minutes.`,
+        text: `Your OTP for registration is ${generatedOtp}. `,
       };
 
       await transporter.sendMail(mailOptions);
@@ -123,20 +127,21 @@ verifyOtp: async (req: Request, res: Response) => {
   }
 ,  
 requestOtp: async (req: Request, res: Response) => {
-    const { number } = req.body;
+  const { email, number } = req.body;
 
-    // Validate phone number format (example regex, adjust as necessary)
-    
+  try {
+    // Check if the user already exists by email or number
+    let userByEmail = await User.findOne({ where: { email } });
+    let userByNumber = await User.findOne({ where: { number } });
 
-    try {
-        // Check if the user already exists using the correct column name
-        const user = await User.findOne({ where: { number: number } });
-        if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
-        }
-
-        // Generate a 6-digit OTP
-        const otp = crypto.randomInt(100000, 999999).toString();
+    if (userByEmail) {
+      return res.status(400).json({ msg: 'Email is already registered' });
+    }
+    if (userByNumber) {
+      return res.status(400).json({ msg: 'Number is already registered' }); 
+    }
+        // Generate a 5-digit OTP
+        const otp = crypto.randomInt(10000, 99999).toString();
         await OtpReg.create({
             number: number,
             otp: otp,
@@ -146,7 +151,7 @@ requestOtp: async (req: Request, res: Response) => {
         const data = {
             recipient: [number],
             sender: 'Daniel',
-            message: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+            message: `Your OTP for password reset is ${otp}.`,
             is_schedule: 'false',
             schedule_date: '',
         };

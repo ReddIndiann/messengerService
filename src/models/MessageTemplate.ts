@@ -37,8 +37,8 @@ MessageTemplate.init(
     },
     messageCategory: {
       type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: 'pending', // Default messageCategory is 'pending'
+      allowNull: true,
+    
     },
   },
   {

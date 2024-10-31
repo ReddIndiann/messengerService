@@ -60,7 +60,7 @@ export const OtpController = {
           const data = {
             recipient: [user.number],
             sender: 'Daniel',
-            message: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+            message: `Your OTP for password reset is ${otp}. `,
             is_schedule: 'false',
             schedule_date: '',
           };
@@ -106,7 +106,7 @@ export const OtpController = {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: 'Your OTP Code',
-            text: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+            text: `Your OTP for password reset is ${otp}..`,
           };
     
           transporter.sendMail(mailOptions, (error, info) => {
@@ -194,11 +194,6 @@ export const OtpController = {
           res.status(500).send('Server error');
         }
       },
-
-
-
-
-
       
   };
 

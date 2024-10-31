@@ -25,7 +25,7 @@ const findSenderAndUser = async (senderId: number, userId: number) => {
 
 const handleApiError = (apiError: any, res: Response) => {
   if (axios.isAxiosError(apiError)) {
-    console.error('mNotify API Error:', {
+    console.error(' API Error:', {
       status: apiError.response?.status,
       statusText: apiError.response?.statusText,
       data: apiError.response?.data,

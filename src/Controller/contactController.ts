@@ -3,13 +3,27 @@ import Contact from '../models/Contact';
 import ContactGroup from '../models/ContactGroup';
 import Group from '../models/Group';
 import { Op } from 'sequelize';
-
+import axios from 'axios';
 
 export const contactController = {
   create: async (req: Request, res: Response) => {
     const { firstname, lastname, birthday, phone, email, userId } = req.body;
+ // Regex for email validation
+ 
+//  const apiKey = process.env.HUNTER_API_KEY; // Add your Hunter.io API key in environment variables
+//  const url = `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=${apiKey}`;
+const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+if (!emailRegex.test(email)) {
+  return res.status(400).json({ msg: 'Invalid email format' });
+}
+ try {
 
-    try {
+  //  const verificationResponse = await axios.get(url);
+  //  const { result } = verificationResponse.data.data;
+
+  //  if (result === 'undeliverable') {
+  //    return res.status(400).json({ msg: 'Email is undeliverable' });
+  //  }
       const contact = await Contact.create({
         firstname,
         lastname,
@@ -119,6 +133,7 @@ export const contactController = {
       }
     }
   },
+  
   searchByNameAndUserId: async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { name } = req.query; // Assuming name is passed as a query parameter
