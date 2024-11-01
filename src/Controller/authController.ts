@@ -6,6 +6,10 @@ import Contact from '../models/Contact';
 import ScheduleMessage from '../models/ScheduleMessage';
 import nodemailer from 'nodemailer';
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -17,17 +21,12 @@ import Otp from '../models/Otp';
 export const authController = {
   register: async (req: Request, res: Response) => {
     const { username, email, password, number } = req.body;
+
     const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ msg: 'Invalid email format' });
     }
 
-       // const verificationResponse = await axios.get(url);
-      // const { result } = verificationResponse.data.data;
-
-      // if (result === 'undeliverable') {
-      //   return res.status(400).json({ msg: 'Email is undeliverable' });
-      // }
     try {
       let user = await User.findOne({ where: { email } });
       if (user) {
@@ -72,27 +71,31 @@ export const authController = {
         },
       });
 
-      let namee = user.username
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: user.email,
-        subject: 'Welcome to Kalert ',
-        text: `Hello and welcome to Kalert!
-
-Dear ${namee}, Thank you for registering! We're excited to have you join our community.
-
-If you have any questions or need assistance, our support team is here to help. Enjoy your experience with Kalert!
-
-Best regards,
-The Kalert Team`,
-      };
-
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error('Error sending email:', error);
-          return res.status(500).send('Error sending email');
+      // Read the HTML template
+      fs.readFile(path.join(__dirname, '../mail/welcomeEmail.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
         }
-        res.status(200).json({ message: 'OTP sent successfully' });
+
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{username}}', user.username);
+
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: user.email,
+          subject: 'Welcome to Kalert',
+          html: personalizedHtml, // Use HTML content
+        };
+
+        // Send the email
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.error('Error sending email:', error); 
+            return res.status(500).send('Error sending email');
+          }
+          res.status(200).json({ message: 'Welcome email sent successfully!' });
+        });
       });
     } catch (err: any) {
       console.error(err.message);
