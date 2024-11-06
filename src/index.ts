@@ -56,7 +56,7 @@ app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   
   try {
-     sequelize.sync({ force: true }); // Sync all models
+     sequelize.sync({ alter: true }); // Sync all models
     console.log('Database & tables created!');
   } catch (err) {
     console.error('Error syncing database:', err);
