@@ -10,7 +10,7 @@ import cron from 'node-cron';
 import moment from 'moment';
 import ScheduleMessage from '../models/ScheduleMessage';
 
-const endPoint = 'https://api.mnotify.com/api/sms/quick';
+const endPoint =process.env.MNOTIFY_ENDPOINT ;
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
 
 
