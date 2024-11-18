@@ -24,7 +24,7 @@ export const senderController = {
 
       if (existingSender) {
         return res.status(400).json({
-          msg: 'A sender with the same name already exists for this user.',
+          msg: 'A sender ID with the same name already exists for this user.',
         });
       }
 
