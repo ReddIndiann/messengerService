@@ -13,6 +13,7 @@ class BundleHistory extends Model {
   public bonusscore!: string;
   public expiry!: Date;
   public status!: string;
+  public bonusStatus!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -65,6 +66,11 @@ bonusscore: { // Changed type to STRING
     //   defaultValue: 'pending', // Default status is 'pending'
     },
     status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'active', // Default status is 'pending'
+      },
+      bonusStatus: {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: 'active', // Default status is 'pending'

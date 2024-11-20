@@ -3,7 +3,7 @@ import BundleHistory from '../models/BundleHistory';
 import User from '../models/User';
 import { Op } from 'sequelize';
 
-const checkExpiredBundles = async () => {
+const checkExpiredBundle = async () => {
   try {
     const expiredBundles = await BundleHistory.findAll({
       where: {
@@ -62,6 +62,6 @@ const checkExpiredBundles = async () => {
 };
 
 // Schedule the job to run every day at midnight
-cron.schedule('* * * * *', checkExpiredBundles);
+cron.schedule('* * * * *', checkExpiredBundle);
 
-export default checkExpiredBundles;
+export default checkExpiredBundle;

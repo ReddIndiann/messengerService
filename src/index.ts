@@ -19,6 +19,8 @@ import BundleHistory from './routes/bundleHistoryRoutes';
 import CreditUsageRoute from './routes/creditusageRoute';
 import CreditUsageOrderRoute from  './routes/creditusageorderRoute';
 import checkExpiredBundles from './Controller/expirycheck';
+import checkBonusExpiredBundle from './Controller/expirycccheck';
+import checkBonusExpiredBundles from './Controller/bonusexpirycheck';
 import { OtpController } from './Controller/otpController';
 import FaqRoutes from './routes/FaqRoutes';
 const app = express();
@@ -28,10 +30,12 @@ app.use(cors({
   allowedHeaders: 'Content-Type, Authorization' // Allow specific headers
 }));
 
-const port = 5000;
+const port = 6000;
  
 app.use(express.json());
 checkExpiredBundles()
+checkBonusExpiredBundle();
+checkBonusExpiredBundles();
 app.use('/auth', authRoutes);
 app.use('/senders', senderRoutes);
 app.use('/message-templates', messageTemplateRoutes);

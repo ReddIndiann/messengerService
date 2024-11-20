@@ -53,6 +53,8 @@ export const bundleHistoryController = {
       // Save the updated user balance
       await user.save();
   
+  
+  
       // Create a new BundleHistory record
       const newBundle = await BundleHistory.create({
         userId,
@@ -63,6 +65,7 @@ export const bundleHistoryController = {
         creditscore,
         bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
+        bonusStatus: status || 'active', // Default to 'active' if not provided
       });
   
       res.status(201).json(newBundle);
@@ -168,6 +171,7 @@ export const bundleHistoryController = {
         creditscore,
         bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
+        bonusStatus: status || 'active', // Default to 'active' if not provided
       });
   
       res.status(201).json({ newBundle, remainingBalance: user.walletbalance });
