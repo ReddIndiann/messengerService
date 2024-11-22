@@ -11,10 +11,12 @@ import path from 'path';
 
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'server242.web-hosting.com', // The server from the screenshot
+  port: 587, // SMTP port from the screenshot
+  secure: false, // Use false for port 587 (TLS)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: 'service@kamakgroup.com', // The email address
+    pass: 'Oppongbema1', // The password
   },
 });
 import Otp from '../models/Otp';
@@ -82,7 +84,7 @@ export const authController = {
         const personalizedHtml = htmlContent.replace('{{username}}', user.username);
 
         const mailOptions = {
-          from: process.env.EMAIL_USER,
+          from:  'service@kamakgroup.com',
           to: user.email,
           subject: 'Welcome to Kalert',
           html: personalizedHtml, // Use HTML content

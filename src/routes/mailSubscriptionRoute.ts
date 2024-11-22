@@ -13,5 +13,4 @@ router.delete('/:id', MailSubscriptionController.delete);
 
 
 
-
 export default router;

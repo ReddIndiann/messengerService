@@ -50,88 +50,98 @@ const handleApiError = (apiError: any, res: Response) => {
   }
 };
 export const OtpController = {
-     requestOtp : async (req: Request, res: Response) => {
-        const { phoneNumber } = req.body;
-      
-        try {
-          const user = await User.findOne({ where: { number: phoneNumber } });
-          if (!user) {
-            return res.status(404).json({ msg: 'This number doesnt belong to an account' });
-          }
-      
-          // Generate a 6-digit OTP
-          const otp = crypto.randomInt(100000, 999999).toString();
-          const otpEntry = await Otp.create({
-            userId: user.id,
-            otp,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
-          });
-      
-          const data = {
-            recipient: [user.number],
-            sender: 'Daniel',
-            message: `Your OTP for password reset is ${otp}. `,
-            is_schedule: 'false',
-            schedule_date: '',
-          };
-      
-          try {
-            const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-            });
-      
-            res.status(200).json({ message: 'OTP sent successfully' });
-          } catch (apiError) {
-            handleApiError(apiError, res);
-          }
-      
-        } catch (err) {
-          console.error('Error requesting OTP:', err);
-          res.status(500).send('Server error');
-        }
-      }  
-      ,
+   
+  requestOtp: async (req: Request, res: Response) => {
+    const { phoneNumber } = req.body;
 
-      requestOtpEmail: async (req: Request, res: Response) => {
-        const { email } = req.body; // Change to email instead of phone number
-        
-        try {
-          const user = await User.findOne({ where: { email } }); // Use email to find user
-          if (!user) {
-            return res.status(404).json({ msg: 'This email doesn\'t belong to an account' });
-          }
-        
-          // Generate a 6-digit OTP
-          const otp = crypto.randomInt(100000, 999999).toString();
-          await Otp.create({
-            userId: user.id,
-            otp,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
-          });
-    
-          const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
-            subject: 'Your OTP Code',
-            text: `Your OTP for password reset is ${otp}..`,
-          };
-    
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Error sending email:', error);
-              return res.status(500).send('Error sending email');
-            }
-            res.status(200).json({ message: 'OTP sent successfully' });
-          });
-    
-        } catch (err) {
-          console.error('Error requesting OTP:', err);
-          res.status(500).send('Server error');
+    try {
+      const user = await User.findOne({ where: { number: phoneNumber } });
+      if (!user) {
+        return res.status(404).json({ msg: 'This number doesnt belong to an account' });
+      }
+
+      // Generate a 6-digit OTP
+      const otp = crypto.randomInt(100000, 999999).toString();
+
+      const data = {
+        recipient: [user.number],
+        sender: 'Daniel',
+        message: `Your OTP for password reset is ${otp}. `,
+        is_schedule: 'false',
+        schedule_date: '',
+      };
+
+      // First, attempt to send the OTP
+      try {
+        const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // If SMS was successfully sent, then save the OTP
+        const otpEntry = await Otp.create({
+          userId: user.id,
+          otp,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
+        });
+
+        res.status(200).json({ message: 'OTP sent successfully' });
+      } catch (apiError) {
+        handleApiError(apiError, res);
+      }
+    } catch (err) {
+      console.error('Error requesting OTP:', err);
+      res.status(500).send('Server error');
+    }
+  },
+
+  requestOtpEmail: async (req: Request, res: Response) => {
+    const { email } = req.body; // Change to email instead of phone number
+
+    try {
+      const user = await User.findOne({ where: { email } }); // Use email to find user
+      if (!user) {
+        return res.status(404).json({ msg: 'This email doesn\'t belong to an account' });
+      }
+
+      // Generate a 6-digit OTP
+      const otp = crypto.randomInt(100000, 999999).toString();
+
+      // const mailOptions = {
+      //   from: process.env.EMAIL_USER,
+      //   to: user.email,
+      //   subject: 'Your OTP Code',
+      //   text: `Your OTP for password reset is ${otp}..`,
+      // };
+      const mailOptions = {
+        from: 'service@kamakgroup.com',
+        to: user.email,
+        subject: 'Your OTP Code',
+        text: `Your OTP for password reset is ${otp}..`,
+      };
+      // First, attempt to send the email
+      transporter.sendMail(mailOptions, async (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          return res.status(500).send('Error sending email');
         }
-      },
+
+        // If email was successfully sent, then save the OTP
+        await Otp.create({
+          userId: user.id,
+          otp,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
+        });
+
+        res.status(200).json({ message: 'OTP sent successfully' });
+      });
+    } catch (err) {
+      console.error('Error requesting OTP:', err);
+      res.status(500).send('Server error');
+    }
+  },
       
       verifyOtp : async (req: Request, res: Response) => {
         const { phoneNumber, otp } = req.body; // Use phoneNumber instead of email

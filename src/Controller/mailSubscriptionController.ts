@@ -256,5 +256,18 @@ create: async (req: Request, res: Response) => {
       res.status(500).json({ msg: 'Failed to unsubscribe', error });
     }
   },
-  
+  getAllNewsletter: async (req: Request, res: Response) => {
+    try {
+      const mailsub = await MailNewsLetter.findAll();
+      res.json(mailsub);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+      } else {
+        console.error('An unknown error occurred');
+        res.status(500).send('Server error');
+      }
+    }
+  },
 };

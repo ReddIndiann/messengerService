@@ -17,7 +17,7 @@ MailNewsLetter.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    walletbalance: {
+    recipients: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,

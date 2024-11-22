@@ -24,6 +24,7 @@ import checkBonusExpiredBundles from './Controller/bonusexpirycheck';
 import { OtpController } from './Controller/otpController';
 import FaqRoutes from './routes/FaqRoutes';
 import MailSubscriptionRoute from './routes/mailSubscriptionRoute'
+import NewsLetterRoues from './routes/newsLetterRoute';
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, 
@@ -31,7 +32,7 @@ app.use(cors({
   allowedHeaders: 'Content-Type, Authorization' // Allow specific headers
 }));
 
-const port = 5050;
+const port = 5051;
  
 app.use(express.json());
 checkExpiredBundles()
@@ -56,20 +57,21 @@ app.use('/creditusageorder', CreditUsageOrderRoute);
 app.use('/bundle', BundleHistory);
 app.use('/faq', FaqRoutes);
 app.use('/mailsub', MailSubscriptionRoute);
+app.use('/news', NewsLetterRoues);
 
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   
   try {
-     sequelize.sync({ force: true }); // Sync all models
+     sequelize.sync({ alter: true }); // Sync all models
     console.log('Database & tables created!');
   } catch (err) {
     console.error('Error syncing database:', err);
   }
 });
 
-
+ 
 
 
 
