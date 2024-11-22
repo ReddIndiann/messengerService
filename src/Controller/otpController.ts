@@ -9,13 +9,23 @@ import nodemailer from 'nodemailer';
 const endPoint = 'https://api.mnotify.com/api/sms/quick';
 const apiKey = process.env.MNOTIFY_APIKEY;
 
+// const transporter = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     user: process.env.EMAIL_USER,
+//     pass: process.env.EMAIL_PASS,
+//   },
+// });odaniel.ac@st.vvu.edu.gh 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'server242.web-hosting.com', // The server from the screenshot
+  port: 587, // SMTP port from the screenshot
+  secure: false, // Use false for port 587 (TLS)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: 'service@kamakgroup.com', // The email address
+    pass: 'Oppongbema1', // The password
   },
 });
+
 const handleApiError = (apiError: any, res: Response) => {
   if (axios.isAxiosError(apiError)) {
     console.error('mNotify API Error:', {
