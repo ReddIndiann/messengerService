@@ -36,10 +36,12 @@ const handleApiError = (apiError: any, res: Response) => {
     }
   };
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'server242.web-hosting.com', // The server from the screenshot
+  port: 587, // SMTP port from the screenshot
+  secure: false, // Use false for port 587 (TLS)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: 'service@kamakgroup.com', // The email address
+    pass: 'Oppongbema1', // The password
   },
 });
 // const otpLimiter = rateLimit({
@@ -75,7 +77,7 @@ export const UserController = {
 
       // Send OTP to the user's email
       const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from:  'service@kamakgroup.com',
         to: email,
         subject: 'Your Registration OTP',
         text: `Your OTP for registration is ${generatedOtp}. `,

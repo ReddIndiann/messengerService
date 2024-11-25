@@ -44,7 +44,7 @@ const handleApiError = (apiError: any, res: Response) => {
         message: apiError.message,
       },
     });
-  } else {
+  } else {  
     console.error('Unknown API Error:', apiError);
     res.status(500).send('Server error');
   }

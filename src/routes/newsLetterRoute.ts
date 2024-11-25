@@ -1,6 +1,6 @@
 import express from 'express';
 import { MailSubscriptionController } from '../Controller/mailSubscriptionController';
-import { sendNewsletter } from '../Controller/mailNewsLetterController';
+// import { sendNewsletter } from '../Controller/mailNewsLetterController';
 const router = express.Router();
 
 
