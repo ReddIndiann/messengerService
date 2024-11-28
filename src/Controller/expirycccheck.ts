@@ -8,9 +8,9 @@ const checkBonusExpiredBundles = async () => {
     // Find all active bundles where bonusStatus is 'active' and the expiry date is not passed
     const activeBundles = await BundleHistory.findAll({
       where: {
-        status: 'active',
-        type: 'expiry',
-        expiry: {
+        bonusStatus: 'active',
+     
+        bonusExpiry: {
           [Op.lt]: new Date(), // Expiry date is in the future
         },
       },
@@ -62,7 +62,7 @@ const checkBonusExpiredBundles = async () => {
         // Update the bonusStatus of the corresponding bundles to 'inactive' after deduction
         const bundlesToUpdate = activeBundles.filter(bundle => bundle.userId === userId);
         for (const bundle of bundlesToUpdate) {
-          bundle.status = 'inactive';  // Change the bonusStatus to 'inactive'
+          bundle.bonusStatus = 'inactive';  // Change the bonusStatus to 'inactive'
           await bundle.save();  // Save the updated bundle
           console.log(`Bundle for user ${userId} set to inactive.`);
         }

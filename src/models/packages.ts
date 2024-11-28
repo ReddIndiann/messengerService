@@ -10,7 +10,9 @@ class Packages extends Model {
   public rate!: number;
   public smscount!: number;
   public expiry!: boolean;
-  public duration!: number | null;  // Updated to allow null
+  public duration!: Date ;  // Updated to allow null
+  public bonusDuration!: Date ;  // Updated to allow null
+  
   public userEntry!: boolean; 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -52,7 +54,11 @@ Packages.init(
       allowNull: false,
     },
     duration: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DATE,
+      allowNull: true,  // Allow null for duration
+    },
+    bonusDuration: {
+      type: DataTypes.DATE,
       allowNull: true,  // Allow null for duration
     },
     userEntry: {

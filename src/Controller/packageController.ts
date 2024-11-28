@@ -5,7 +5,7 @@ import BundleHistory from '../models/BundleHistory';
 export const packagesController = {
   // Create a new package
   create: async (req: Request, res: Response) => {
-    const { name, type, price, rate, smscount, expiry,bonusrate, duration,userEntry } = req.body;
+    const { name, type, price, rate, smscount, expiry,bonusrate, duration,userEntry,bonusDuration } = req.body;
 
   
     if (!name || !type) {
@@ -33,6 +33,7 @@ export const packagesController = {
             expiry,
             userEntry,
             duration,
+            bonusDuration
         });
 
         res.status(201).json(newPackage);
@@ -84,7 +85,7 @@ export const packagesController = {
   // Update a package by ID
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, type, price, rate, smscount, expiry, duration } = req.body;
+    const { name, type, price, rate, smscount, expiry, duration,bonusDuration } = req.body;
 
     try {
       const packageDetails = await Packages.findByPk(id);
@@ -100,6 +101,7 @@ export const packagesController = {
       if (smscount) packageDetails.smscount = smscount;
       if (expiry) packageDetails.expiry = expiry;
       if (duration) packageDetails.duration = duration;
+      if (bonusDuration) packageDetails.bonusDuration = bonusDuration;
 
       await packageDetails.save();
 

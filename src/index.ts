@@ -25,6 +25,7 @@ import { OtpController } from './Controller/otpController';
 import FaqRoutes from './routes/FaqRoutes';
 import MailSubscriptionRoute from './routes/mailSubscriptionRoute'
 import NewsLetterRoues from './routes/newsLetterRoute';
+import AdminConfigController from './routes/adminConfigRoutes';
 const app = express();
 app.use(cors({
   origin: true, // Allow all domains for testing, 
@@ -32,7 +33,7 @@ app.use(cors({
   allowedHeaders: 'Content-Type, Authorization' // Allow specific headers
 }));
 
-const port = 5051;
+const port = 5050;
  
 app.use(express.json());
 checkExpiredBundles()
@@ -58,6 +59,7 @@ app.use('/bundle', BundleHistory);
 app.use('/faq', FaqRoutes);
 app.use('/mailsub', MailSubscriptionRoute);
 app.use('/news', NewsLetterRoues);
+app.use('/adminconfig', AdminConfigController);
 
 
 app.listen(port, () => {

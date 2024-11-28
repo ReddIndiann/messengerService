@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import AdminConfig from '../models/AdminConfig';
 
 
 const transporter = nodemailer.createTransport({
@@ -39,12 +40,17 @@ export const authController = {
         return res.status(400).json({ msg: 'Number already belongs to a user' });
       }
 
+      const adminConfig = await AdminConfig.findOne();
+      const initialBonus = adminConfig ? adminConfig.userInitialAmount : 0;
+  
+
       const hashedPassword = await bcrypt.hash(password, 10);
       user = await User.create({
         username,
         email,
         password: hashedPassword,
         number,
+        bonusbalance: initialBonus,
       });
 
       const payload = {
