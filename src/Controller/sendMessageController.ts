@@ -7,7 +7,7 @@ import axios from 'axios';
 import CreditUsage from '../models/CreditUsage';
 const endPoint = 'https://api.mnotify.com/api/sms/quick';
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
-
+import { sendSMS } from '../utility/smsService';
 
 interface Message {
   id: number; // Example property, adjust as necessary
@@ -113,25 +113,14 @@ export const sendMessageController = {
         messageType,
         recursion,
       });
+      const response = await sendSMS(recipientList, 'Kamak', content);
+      console.log('Message sent response:', response);
 
       // Prepare data for external API call
-      const data = {
-        recipient: recipientList,
-        sender: "Kamak",
-        message: content,
-        is_schedule: 'false',
-        schedule_date: '',
-      };
+     
 
       // Call the external API
-      const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('mNotify API Response:', response.data);
+      
 
       res.status(201).json({
         message: 'Message created and sent successfully',
@@ -150,13 +139,9 @@ export const sendMessageController = {
         // Optionally, notify the user via email or SMS
       }
 
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        handleApiError(err, res);
-      } else {
-        console.error('Server Error:', err);
-        res.status(500).send('Server error');
-      }
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      return res.status(500).json({ message: 'Error sending OTP, please try again later' });
     }
   },
   

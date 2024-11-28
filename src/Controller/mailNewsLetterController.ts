@@ -1,44 +1,15 @@
 import { Request, Response } from 'express';
 import MailSubscription from '../models/mailsubscribed';
-import { stat } from 'fs';
+import fs from 'fs';
+import path from 'path';
+import AdminConfig from '../models/AdminConfig';
+import { sendEmail } from '../utility/emailService';
+
 import MailNewsLetter from '../models/MailNewsLetter';
 import nodemailer from 'nodemailer';
 
 export const MailSubscriptionController = {
-  // Create a new package
-//   create: async (req: Request, res: Response) => {
-//     const { email} = req.body;
 
-  
-//     if (!email) {
-//         return res.status(400).json({ msg: 'email required' });
-//     }
-//     const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-//     if (!emailRegex.test(email)) {
-//       return res.status(400).json({ msg: 'Invalid email format' });
-//     }
-
-//     try {
-//         // Check if a package with the same name already exists
-//         let user = await MailSubscription.findOne({ where: { email ,
-//             status:'active'
-//         } });
-//       if (user) {
-//         return res.status(400).json({ msg: 'email already subscribed' });
-//       }
-//         // Proceed with creating the package if no duplicate is found
-//         const newSub = await MailSubscription.create({
-//             email,
-//             status: 'active',
-//         });
-          
-
-//         res.status(201).json(newSub);
-//     } catch (err: unknown) {
-//         console.error('Error Subscribing to newsletter:', err instanceof Error ? err.message : 'Unknown error');
-//         res.status(500).send('Server error');
-//     }
-// },
 create: async (req: Request, res: Response) => {
     const { email } = req.body;
   
@@ -204,17 +175,25 @@ create: async (req: Request, res: Response) => {
       // Step 3: Prepare email options
       const recipients = activeSubscribers.map((subscriber) => subscriber.email);
   
-      const mailOptions = {
-        from:  'server242.web-hosting.com',
-        to: recipients, // You can keep this field for your reference
-        bcc: recipients, // BCC ensures privacy of recipients
-        subject: 'Newsletter from Kalert',
-        html: `<p>${message}</p>`, // The newsletter content
-      };
-  
+    
+      fs.readFile(path.join(__dirname, '../mail/newsLetter.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
+        }
+
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{message}}', message);
+        const mailOptions = {
+          from:  'service@kamakgroup.com',
+          to: recipients, // You can keep this field for your reference
+          bcc: recipients, // BCC ensures privacy of recipients
+          subject: 'Newsletter from Kalert',
+          html: personalizedHtml, // The newsletter content
+        };
       // Step 4: Send the email
-      const info = await transporter.sendMail(mailOptions);
-  
+       transporter.sendMail(mailOptions);
+    });
       // Step 5: Save newsletter details in the MailNewsLetter table
       const newsletterRecord = await MailNewsLetter.create({
         message,
@@ -223,7 +202,7 @@ create: async (req: Request, res: Response) => {
   
       res.status(200).json({
         msg: 'Newsletter sent successfully!',
-        info,
+ 
         savedNewsletter: newsletterRecord,
       });
     } catch (error) {

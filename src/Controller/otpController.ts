@@ -6,49 +6,10 @@ import crypto from 'crypto';
 import { Op } from 'sequelize'; // Ensure you import Op for Sequelize operators
 import nodemailer from 'nodemailer';
 
-const endPoint = 'https://api.mnotify.com/api/sms/quick';
-const apiKey = process.env.MNOTIFY_APIKEY;
+import { sendSMS } from '../utility/smsService';
+import { sendEmail } from '../utility/emailService';
 
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });odaniel.ac@st.vvu.edu.gh 
-const transporter = nodemailer.createTransport({
-  host: 'server242.web-hosting.com', // The server from the screenshot
-  port: 587, // SMTP port from the screenshot
-  secure: false, // Use false for port 587 (TLS)
-  auth: {
-    user: 'service@kamakgroup.com', // The email address
-    pass: 'Oppongbema1', // The password
-  },
-});
 
-const handleApiError = (apiError: any, res: Response) => {
-  if (axios.isAxiosError(apiError)) {
-    console.error('mNotify API Error:', {
-      status: apiError.response?.status,
-      statusText: apiError.response?.statusText,
-      data: apiError.response?.data,
-      message: apiError.message,
-    });
-
-    res.status(apiError.response?.status || 500).json({
-      message: 'Error from mNotify API',
-      error: {
-        status: apiError.response?.status,
-        statusText: apiError.response?.statusText,
-        data: apiError.response?.data,
-        message: apiError.message,
-      },
-    });
-  } else {  
-    console.error('Unknown API Error:', apiError);
-    res.status(500).send('Server error');
-  }
-};
 export const OtpController = {
    
   requestOtp: async (req: Request, res: Response) => {
@@ -62,35 +23,24 @@ export const OtpController = {
 
       // Generate a 6-digit OTP
       const otp = crypto.randomInt(100000, 999999).toString();
-
-      const data = {
-        recipient: [user.number],
-        sender: 'Daniel',
-        message: `Your OTP for password reset is ${otp}. `,
-        is_schedule: 'false',
-        schedule_date: '',
-      };
-
-      // First, attempt to send the OTP
+      const content =  `Your OTP for password reset is ${otp}. `
+      
       try {
-        const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-
-        // If SMS was successfully sent, then save the OTP
-        const otpEntry = await Otp.create({
-          userId: user.id,
-          otp,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
-        });
-
-        res.status(200).json({ message: 'OTP sent successfully' });
-      } catch (apiError) {
-        handleApiError(apiError, res);
+        const response = await sendSMS([user.number], 'Kamak', content);
+        
+        if (response.status === 200) {
+          return res.status(200).json({ message: 'OTP sent successfully' });
+        } else {
+          return res.status(response.status).json({ 
+            message: response.message || 'Failed to send OTP' 
+          });
+        }
+      } catch (error) {
+        console.error('Error sending OTP:', error);
+        return res.status(500).json({ message: 'Error sending OTP, please try again later' });
       }
+      // First, attempt to send the OTP
+
     } catch (err) {
       console.error('Error requesting OTP:', err);
       res.status(500).send('Server error');
@@ -109,34 +59,13 @@ export const OtpController = {
       // Generate a 6-digit OTP
       const otp = crypto.randomInt(100000, 999999).toString();
 
-      // const mailOptions = {
-      //   from: process.env.EMAIL_USER,
-      //   to: user.email,
-      //   subject: 'Your OTP Code',
-      //   text: `Your OTP for password reset is ${otp}..`,
-      // };
-      const mailOptions = {
-        from: 'service@kamakgroup.com',
-        to: user.email,
-        subject: 'Your OTP Code',
-        text: `Your OTP for password reset is ${otp}..`,
-      };
+     const subject = 'Your Reset Password OTP';
+      const html = `Your OTP for registration is ${otp}.`;
+
+      await sendEmail(user.email, subject, html); // Use the sendEmail function here
+
       // First, attempt to send the email
-      transporter.sendMail(mailOptions, async (error, info) => {
-        if (error) {
-          console.error('Error sending email:', error);
-          return res.status(500).send('Error sending email');
-        }
 
-        // If email was successfully sent, then save the OTP
-        await Otp.create({
-          userId: user.id,
-          otp,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
-        });
-
-        res.status(200).json({ message: 'OTP sent successfully' });
-      });
     } catch (err) {
       console.error('Error requesting OTP:', err);
       res.status(500).send('Server error');

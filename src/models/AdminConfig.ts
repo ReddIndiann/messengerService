@@ -11,9 +11,9 @@ class AdminConfig extends Model {
 
   public mailHost!: string;
   public mailport!: string;  
-   public contactPerson!: string;
+   public contactPersonPhone!: string;
+   public contactPersonEmail!: string;
   public userInitialAmount!: number; 
-
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -41,10 +41,14 @@ AdminConfig.init(
         type: DataTypes.STRING,
         allowNull: true,
     },
-    contactPerson: {
+    contactPersonPhone: {
       type: DataTypes.STRING,
       allowNull: true,
   },
+  contactPersonEmail: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
     mailport: {
         type: DataTypes.STRING,  // Changed 'NUMBER' to 'INTEGER'
         allowNull: true,

@@ -3,7 +3,8 @@ import MailSubscription from '../models/mailsubscribed';
 import { stat } from 'fs';
 import MailNewsLetter from '../models/MailNewsLetter';
 import nodemailer from 'nodemailer';
-
+import fs from 'fs';
+import path from 'path';
 export const MailSubscriptionController = {
   // Create a new package
 //   create: async (req: Request, res: Response) => {
@@ -193,27 +194,36 @@ create: async (req: Request, res: Response) => {
   
       // Step 2: Configure NodeMailer transporter
       const transporter = nodemailer.createTransport({
-        service: 'gmail', // or your email service
+        host: 'server242.web-hosting.com', // The server from the screenshot
+        port: 587, // SMTP port from the screenshot
+        secure: false, // Use false for port 587 (TLS)
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+          user: 'service@kamakgroup.com', // The email address
+          pass: 'Oppongbema1', // The password
         },
       });
-  
       // Step 3: Prepare email options
       const recipients = activeSubscribers.map((subscriber) => subscriber.email);
   
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_USER, // You can keep this field for your reference
-        bcc: recipients, // BCC ensures privacy of recipients
-        subject: 'Newsletter from Kalert',
-        html: `<p>${message}</p>`, // The newsletter content
-      };
-  
+    
+      fs.readFile(path.join(__dirname, '../mail/newsLetter.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
+        }
+
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{message}}', message);
+        const mailOptions = {
+          from:  'service@kamakgroup.com',
+          to: recipients, // You can keep this field for your reference
+          bcc: recipients, // BCC ensures privacy of recipients
+          subject: 'Newsletter from Kalert',
+          html: personalizedHtml, // The newsletter content
+        };
       // Step 4: Send the email
-      const info = await transporter.sendMail(mailOptions);
-  
+       transporter.sendMail(mailOptions);
+    });
       // Step 5: Save newsletter details in the MailNewsLetter table
       const newsletterRecord = await MailNewsLetter.create({
         message,
@@ -222,7 +232,7 @@ create: async (req: Request, res: Response) => {
   
       res.status(200).json({
         msg: 'Newsletter sent successfully!',
-        info,
+ 
         savedNewsletter: newsletterRecord,
       });
     } catch (error) {

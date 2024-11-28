@@ -2,24 +2,13 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
-import Contact from '../models/Contact';
-import ScheduleMessage from '../models/ScheduleMessage';
-import nodemailer from 'nodemailer';
-import axios from 'axios';
+
 import fs from 'fs';
 import path from 'path';
 import AdminConfig from '../models/AdminConfig';
+import { sendEmail } from '../utility/emailService';
 
 
-const transporter = nodemailer.createTransport({
-  host: 'server242.web-hosting.com', // The server from the screenshot
-  port: 587, // SMTP port from the screenshot
-  secure: false, // Use false for port 587 (TLS)
-  auth: {
-    user: 'service@kamakgroup.com', // The email address
-    pass: 'Oppongbema1', // The password
-  },
-});
 import Otp from '../models/Otp';
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -89,21 +78,14 @@ export const authController = {
         // Replace the placeholder with the actual username
         const personalizedHtml = htmlContent.replace('{{username}}', user.username);
 
-        const mailOptions = {
-          from:  'service@kamakgroup.com',
-          to: user.email,
-          subject: 'Welcome to Kalert',
-          html: personalizedHtml, // Use HTML content
-        };
 
+        const subject ='Welcome to Kalert';
+        const html =personalizedHtml;
+  
+        
         // Send the email
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error('Error sending email:', error); 
-            return res.status(500).send('Error sending email');
-          }
-          res.status(200).json({ message: 'Welcome email sent successfully!' });
-        });
+        sendEmail(email, subject, html); // Use the sendEmail function here
+
       });
     } catch (err: any) {
       console.error(err.message);

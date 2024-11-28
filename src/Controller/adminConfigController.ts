@@ -3,17 +3,19 @@ import AdminConfig from '../models/AdminConfig';
 export const AdminConfigController = {
   // Create a new package
   create: async (req: Request, res: Response) => {
-    const { messagingEndpoint, messagingApiKey, emailUser,emailPassword,contactPerson,mailHost,mailport,userInitialAmount} = req.body;
+    const { messagingEndpoint, messagingApiKey, emailUser,emailPassword,contactPersonPhone,contactPersonEmail,mailHost,mailport,userInitialAmount} = req.body;
 
   
  
 //
+
+
     try {
         // Check if a package with the same name already exists
        
         // Proceed with creating the package if no duplicate is found
         const newConfig = await AdminConfig.create({
-            messagingEndpoint, messagingApiKey, emailUser,emailPassword,contactPerson,mailHost,mailport,userInitialAmount
+            messagingEndpoint, messagingApiKey, emailUser,emailPassword,contactPersonPhone,contactPersonEmail,mailHost,mailport,userInitialAmount
         });
 
         res.status(201).json(newConfig);
@@ -65,7 +67,7 @@ export const AdminConfigController = {
   // Update a package by ID
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { messagingEndpoint, messagingApiKey,contactPerson, emailUser,mailHost,mailport,userIntialAmount} = req.body;
+    const { messagingEndpoint, messagingApiKey,contactPersonPhone,contactPersonEmail, emailUser,mailHost,mailport,userIntialAmount} = req.body;
 
 
     try {
@@ -81,7 +83,8 @@ export const AdminConfigController = {
       if (messagingEndpoint) adminConfig.messagingEndpoint = messagingEndpoint;
       if (mailHost) adminConfig.mailHost = mailHost;
       if (mailport) adminConfig.mailport = mailport;
-      if (contactPerson) adminConfig.contactPerson = contactPerson;
+      if (contactPersonPhone) adminConfig.contactPersonPhone = contactPersonPhone;
+      if (contactPersonEmail) adminConfig.contactPersonEmail = contactPersonEmail;
       if (userIntialAmount) adminConfig.userInitialAmount = userIntialAmount;
       
 

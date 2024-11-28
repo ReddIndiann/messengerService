@@ -6,9 +6,9 @@ import axios from 'axios';
 import cron from 'node-cron';
 import moment from 'moment';  // Use moment.js to handle date and time
 import CreditUsage from '../models/CreditUsage';
-const endPoint = 'https://api.mnotify.com/api/sms/quick';
+const endPoint = process.env.MNOTIFY_ENDPOINT;
 const apiKey = process.env.MNOTIFY_APIKEY; // Replace with your actual API key
-
+import { sendSMS } from '../utility/smsService';
 export const scheduleMessageController = {
   create: async (req: Request, res: Response) => {
     const { recipients, senderId, userId, content, messageType, dateScheduled, timeScheduled, recursion } = req.body;
@@ -95,28 +95,8 @@ export const scheduleMessageController = {
       const cronJob = cron.schedule(scheduleDateTime.format('m H D M *'), async () => {
         try {
           // Prepare data for mNotify API
-          const data = {
-            recipient: recipientsArray,
-            sender: "Daniel",
-            message: content,
-            is_schedule: 'false',
-          };
-
-          // Configure the request
-          const url = `${endPoint}?key=${apiKey}`;
-          const config = {
-            method: 'post',
-            url: url,
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            data: data,
-          };
-
-          // Send the message via mNotify API
-          const response = await axios(config);
-          console.log('mNotify API Response:', response.data);
+          const response = await sendSMS(recipientsArray, 'Daniel', content);
+          console.log('Message sent response:', response);
 
           // Update the schedule message status after sending
           scheduleMessage.status = 'Sent';
@@ -149,14 +129,9 @@ export const scheduleMessageController = {
         }, // Include updated credit balance in the response
       });
 
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err.message);
-        res.status(500).send('Server error');
-      } else {
-        console.error('An unknown error occurred');
-        res.status(500).send('Server error');
-      }
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      return res.status(500).json({ message: 'Error sending OTP, please try again later' });
     }
   },
 
