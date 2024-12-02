@@ -7,6 +7,8 @@ import bcrypt from 'bcryptjs';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
+import fs from 'fs';
+import path from 'path';
 import { sendSMS } from '../utility/smsService';
 import { sendEmail } from '../utility/emailService';
 // import rateLimit from 'express-rate-limit';
@@ -46,13 +48,27 @@ export const UserController = {
       });
 
       // Send OTP to the user's email
-      const subject = 'Your Registration OTP';
-      const text = `Your OTP for registration is ${generatedOtp}.`;
-
-      await sendEmail(email, subject, text); // Use the sendEmail function here
-
+     
+      
       res.status(200).json({ msg: 'OTP sent successfully. Please verify it.' });
+      fs.readFile(path.join(__dirname, '../mail/sendRegistrationOtp.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
+        }
 
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{generatedOtp}}', generatedOtp);
+
+
+        const subject = 'Your Registration code';;
+        const html =personalizedHtml;
+  
+        
+        // Send the email
+        sendEmail(email, subject, html); // Use the sendEmail function here
+
+      });
     } catch (err: any) {
       console.error(err.message);
       res.status(500).send('Server error');

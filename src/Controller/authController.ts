@@ -329,6 +329,35 @@ changePassword: async (req: Request, res: Response) => {
       console.error('Error resetting password:', err);
       res.status(500).json({ msg: 'Server error' });
     }
-  }
+  },
+  resetPasswordEmail: async (req: Request, res: Response) => {
+    const { email, newPassword } = req.body;
   
+    // Validate input
+    if (!email || !newPassword) {
+      return res.status(400).json({ msg: 'Phone number and new password are required' });
+    }
+  
+    try {
+      // Find the user by phone number
+      const user = await User.findOne({ where: { email: email } });
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+  
+      await user.save();
+  
+      // Optionally, delete the OTP entry after successful password reset
+      await Otp.destroy({ where: { userId: user.id } });
+  
+      res.status(200).json({ msg: 'Password reset successfully' });
+    } catch (err) {
+      console.error('Error resetting password:', err);
+      res.status(500).json({ msg: 'Server error' });
+    }
+  }
 };

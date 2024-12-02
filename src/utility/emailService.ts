@@ -1,22 +1,20 @@
-// emailService.ts
+import nodemailer, { TransportOptions } from 'nodemailer';
 
-import nodemailer from 'nodemailer';
-
-// Setup Nodemailer transporter
+// Setup Nodemailer transporter with explicit typing
 const transporter = nodemailer.createTransport({
-  host: 'server242.web-hosting.com', // The server from the screenshot
-  port: 587, // SMTP port from the screenshot
-  secure: false, // Use false for port 587 (TLS)
+  host: process.env.MAIL_HOST as string, // Explicitly cast to string
+  port: parseInt(process.env.MAIL_PORT as string), // Ensure port is a number
+  secure: process.env.SECURE_STATUS === 'true', // Make sure this is a boolean
   auth: {
-    user: 'service@kamakgroup.com', // The email address
-    pass: 'Oppongbema1', // The password
+    user: process.env.MAIL_USER as string, // Explicitly cast to string
+    pass: process.env.MAIL_PASS as string, // Explicitly cast to string
   },
-});
+} as TransportOptions); // Explicitly specify the type
 
 // Function to send email
 export const sendEmail = async (to: string, subject: string, html: string) => {
   const mailOptions = {
-    from: 'service@kamakgroup.com',
+    from: process.env.MAIL_USER,
     to,
     subject,
     html,
