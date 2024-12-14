@@ -19,8 +19,8 @@ router.get('/user/:userId', bundleHistoryController.getByUserId); // New route a
 // Get bundle history entries/sum by user ID
 router.get('/usertype/:userId', bundleHistoryController.getByUserTypeId); // New route added
 
-// Update a bundle history entry by ID
-router.put('/:id', bundleHistoryController.update);
+// // Update a bundle history entry by ID
+// router.put('/:id', bundleHistoryController.update);
 
 // Delete a bundle history entry by ID
 router.delete('/:id', bundleHistoryController.delete);

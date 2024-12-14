@@ -2,21 +2,13 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
-import Contact from '../models/Contact';
-import ScheduleMessage from '../models/ScheduleMessage';
-import nodemailer from 'nodemailer';
-import axios from 'axios';
+
 import fs from 'fs';
 import path from 'path';
+import AdminConfig from '../models/AdminConfig';
+import { sendEmail } from '../utility/emailService';
 
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 import Otp from '../models/Otp';
 export const authController = {
   register: async (req: Request, res: Response) => {
@@ -37,12 +29,17 @@ export const authController = {
         return res.status(400).json({ msg: 'Number already belongs to a user' });
       }
 
+      const adminConfig = await AdminConfig.findOne();
+      const initialBonus = adminConfig ? adminConfig.userInitialAmount : 0;
+  
+
       const hashedPassword = await bcrypt.hash(password, 10);
       user = await User.create({
         username,
         email,
         password: hashedPassword,
         number,
+        bonusbalance: initialBonus,
       });
 
       const payload = {
@@ -81,21 +78,14 @@ export const authController = {
         // Replace the placeholder with the actual username
         const personalizedHtml = htmlContent.replace('{{username}}', user.username);
 
-        const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: user.email,
-          subject: 'Welcome to Kalert',
-          html: personalizedHtml, // Use HTML content
-        };
 
+        const subject ='Welcome to Kalert';
+        const html =personalizedHtml;
+  
+        
         // Send the email
-        transporter.sendMail(mailOptions, (error, info) => {
-          if (error) {
-            console.error('Error sending email:', error); 
-            return res.status(500).send('Error sending email');
-          }
-          res.status(200).json({ message: 'Welcome email sent successfully!' });
-        });
+        sendEmail(email, subject, html); // Use the sendEmail function here
+
       });
     } catch (err: any) {
       console.error(err.message);
@@ -275,10 +265,11 @@ changePassword: async (req: Request, res: Response) => {
 
     // Check if the old password is correct
     const isMatch = await bcrypt.compare(oldPassword, user.password);
+    const notSame = await bcrypt.compare(oldPassword, newPassword);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Incorrect old password' });
     }
-
+    
     // Hash the new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedNewPassword;
@@ -338,6 +329,35 @@ changePassword: async (req: Request, res: Response) => {
       console.error('Error resetting password:', err);
       res.status(500).json({ msg: 'Server error' });
     }
-  }
+  },
+  resetPasswordEmail: async (req: Request, res: Response) => {
+    const { email, newPassword } = req.body;
   
+    // Validate input
+    if (!email || !newPassword) {
+      return res.status(400).json({ msg: 'Phone number and new password are required' });
+    }
+  
+    try {
+      // Find the user by phone number
+      const user = await User.findOne({ where: { email: email } });
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+  
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+  
+      await user.save();
+  
+      // Optionally, delete the OTP entry after successful password reset
+      await Otp.destroy({ where: { userId: user.id } });
+  
+      res.status(200).json({ msg: 'Password reset successfully' });
+    } catch (err) {
+      console.error('Error resetting password:', err);
+      res.status(500).json({ msg: 'Server error' });
+    }
+  }
 };

@@ -3,17 +3,19 @@ import BundleHistory from '../models/BundleHistory';
 import Packages from '../models/packages'; // Import the Packages model for reference
 import User from '../models/User'; // Import the User model for reference
 import WalletHistory from '../models/WalletHistory'; // Import WalletHistory to manage user wallet
+function formatToSQLDate(date: string): string {
+  const jsDate = new Date(date); // Convert string to JavaScript Date object
+  return jsDate.toISOString().slice(0, 19).replace('T', ' '); // Format as 'YYYY-MM-DD HH:mm:ss'
+}
 
 export const bundleHistoryController = {
+  
   // Create a new bundle history entry
   createWithNormalWallet: async (req: Request, res: Response) => {
-    const { userId, packageId, package_name, expiry, type, status, creditscore } = req.body;
+    const { userId, packageId, package_name, expiry, type, status, creditscore,bonusExpiry } = req.body;
   
     try {
       // Validate required fields
-      if (!userId || !packageId || !package_name || !expiry || !creditscore) {
-        return res.status(400).json({ msg: 'User ID, Package ID, Package Name, Expiry, and Credit Score are required' });
-      }
   
       // Fetch the user
       const user = await User.findByPk(userId);
@@ -32,7 +34,10 @@ export const bundleHistoryController = {
       if (packageCost == null) {
         return res.status(400).json({ msg: 'Invalid package price' });
       }
-  
+  console.warn(bonusExpiry + "      1");
+  console.log("bonusExpiry",bonusExpiry);
+  console.warn(expiry + "   2");
+  console.log("bonusExpiry",bonusExpiry);
       // Calculate the bonus score (bonusrate as a percentage of smscount)
       const bonusScore = selectedPackage.bonusrate * (creditscore || 0) / 100;
   
@@ -53,6 +58,8 @@ export const bundleHistoryController = {
       // Save the updated user balance
       await user.save();
   
+  
+  
       // Create a new BundleHistory record
       const newBundle = await BundleHistory.create({
         userId,
@@ -63,8 +70,9 @@ export const bundleHistoryController = {
         creditscore,
         bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
+        bonusStatus: status || 'active', // Default to 'active' if not provided
+        bonusExpiry
       });
-  
       res.status(201).json(newBundle);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : 'Server error while creating bundle history');
@@ -110,7 +118,7 @@ export const bundleHistoryController = {
 
 
   createWithAppWallet: async (req: Request, res: Response) => {
-    const { userId, packageId, package_name, expiry, type, status, creditscore } = req.body;
+    const { userId, packageId, package_name, expiry, type, status, creditscore,bonusExpiry } = req.body;
   
     try {
       // Fetch the user
@@ -157,7 +165,17 @@ export const bundleHistoryController = {
       user.bonusbalance += bonusScore;
   
       await user.save(); // Save the updated user balance
-  
+      console.warn(bonusExpiry + "      1");
+      console.log("bonusExpiry",bonusExpiry);
+      console.warn(expiry + "   2");
+      console.log("bonusExpiry",bonusExpiry);
+      let bonustate;
+if (bonusScore > 0) {
+  bonustate = 'active';
+} else {
+  bonustate = 'inactive';
+}
+
       // Create a new BundleHistory record
       const newBundle = await BundleHistory.create({
         userId,
@@ -168,6 +186,8 @@ export const bundleHistoryController = {
         creditscore,
         bonusscore: bonusScore, // Save the calculated bonus score
         status: status || 'active', // Default to 'active' if not provided
+        bonusStatus: bonustate || 'down', // Default to 'active' if not provided
+        bonusExpiry
       });
   
       res.status(201).json({ newBundle, remainingBalance: user.walletbalance });
@@ -303,33 +323,33 @@ export const bundleHistoryController = {
   
   
   // Update a bundle history entry by ID
-  update: async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { userId, packageId, package_name, expiry,type, status ,creditscore} = req.body;
+  // update: async (req: Request, res: Response) => {
+  //   const { id } = req.params;
+  //   const { userId, packageId, package_name, expiry,type, status ,creditscore} = req.body;
 
-    try {
-      const bundleDetails = await BundleHistory.findByPk(id);
-      if (!bundleDetails) {
-        return res.status(404).json({ msg: 'Bundle history not found' });
-      }
+  //   try {
+  //     const bundleDetails = await BundleHistory.findByPk(id);
+  //     if (!bundleDetails) {
+  //       return res.status(404).json({ msg: 'Bundle history not found' });
+  //     }
 
-      // Update the fields if provided
-      if (userId) bundleDetails.userId = userId;
-      if (packageId) bundleDetails.packageId = packageId;
-      if (package_name) bundleDetails.package_name = package_name;
-      if (expiry) bundleDetails.expiry = expiry;
-      if (type) bundleDetails.type = type;
-      if (creditscore) bundleDetails.creditscore = creditscore;
-      if (status) bundleDetails.status = status;
+  //     // Update the fields if provided
+  //     if (userId) bundleDetails.userId = userId;
+  //     if (packageId) bundleDetails.packageId = packageId;
+  //     if (package_name) bundleDetails.package_name = package_name;
+  //     if (expiry) bundleDetails.expiry = expiry;
+  //     if (type) bundleDetails.type = type;
+  //     if (creditscore) bundleDetails.creditscore = creditscore;
+  //     if (status) bundleDetails.status = status;
 
-      await bundleDetails.save();
+  //     await bundleDetails.save();
 
-      res.json(bundleDetails);
-    } catch (err: unknown) {
-      console.error(err instanceof Error ? err.message : 'Server error while updating bundle history');
-      res.status(500).send('Server error');
-    }
-  },
+  //     res.json(bundleDetails);
+  //   } catch (err: unknown) {
+  //     console.error(err instanceof Error ? err.message : 'Server error while updating bundle history');
+  //     res.status(500).send('Server error');
+  //   }
+  // },
 
   // Delete a bundle history entry by ID
   delete: async (req: Request, res: Response) => {

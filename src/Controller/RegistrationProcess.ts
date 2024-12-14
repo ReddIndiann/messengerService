@@ -7,41 +7,15 @@ import bcrypt from 'bcryptjs';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
+import fs from 'fs';
+import path from 'path';
+import { sendSMS } from '../utility/smsService';
+import { sendEmail } from '../utility/emailService';
 // import rateLimit from 'express-rate-limit';
 // Setup Nodemailer transporter (example for Gmail)
 
-const endPoint = 'https://api.mnotify.com/api/sms/quick';
-const apiKey = process.env.MNOTIFY_APIKEY;
-const handleApiError = (apiError: any, res: Response) => {
-    if (axios.isAxiosError(apiError)) {
-      console.error('mNotify API Error:', {
-        status: apiError.response?.status,
-        statusText: apiError.response?.statusText,
-        data: apiError.response?.data,
-        message: apiError.message,
-      });
-  
-      res.status(apiError.response?.status || 500).json({
-        message: 'Error from mNotify API',
-        error: {
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
-          data: apiError.response?.data,
-          message: apiError.message,
-        },
-      });
-    } else {
-      console.error('Unknown API Error:', apiError);
-      res.status(500).send('Server error');
-    }
-  };
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+
+
 // const otpLimiter = rateLimit({
 //     windowMs: 10 * 60 * 1000, // 10 minutes
 //     max: 5, // Limit each IP to 5 requests per windowMs
@@ -74,17 +48,27 @@ export const UserController = {
       });
 
       // Send OTP to the user's email
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Your Registration OTP',
-        text: `Your OTP for registration is ${generatedOtp}. `,
-      };
-
-      await transporter.sendMail(mailOptions);
-
+     
+      
       res.status(200).json({ msg: 'OTP sent successfully. Please verify it.' });
+      fs.readFile(path.join(__dirname, '../mail/sendRegistrationOtp.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
+        }
 
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{generatedOtp}}', generatedOtp);
+
+
+        const subject = 'Your Registration code';;
+        const html =personalizedHtml;
+  
+        
+        // Send the email
+        sendEmail(email, subject, html); // Use the sendEmail function here
+
+      });
     } catch (err: any) {
       console.error(err.message);
       res.status(500).send('Server error');
@@ -147,32 +131,23 @@ requestOtp: async (req: Request, res: Response) => {
             otp: otp,
             expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
         });
+const content = `Your OTP for password reset is ${otp}.`
 
-        const data = {
-            recipient: [number],
-            sender: 'Daniel',
-            message: `Your OTP for password reset is ${otp}.`,
-            is_schedule: 'false',
-            schedule_date: '',
-        };
 
-        try {
-            const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (response.status === 200) {
-                return res.status(200).json({ message: 'OTP sent successfully' });
-            } else {
-                return res.status(500).json({ message: 'Failed to send OTP, please try again later' });
-            }
-        } catch (apiError) {
-            console.error('Error sending OTP:', apiError);
-            return res.status(500).json({ message: 'Error sending OTP, please try again later' });
-        }
+try {
+  const response = await sendSMS([number], 'Kamak', content);
+  
+  if (response.status === 200) {
+    return res.status(200).json({ message: 'OTP sent successfully' });
+  } else {
+    return res.status(response.status).json({ 
+      message: response.message || 'Failed to send OTP' 
+    });
+  }
+} catch (error) {
+  console.error('Error sending OTP:', error);
+  return res.status(500).json({ message: 'Error sending OTP, please try again later' });
+}
 
     } catch (err) {
         console.error('Error requesting OTP:', err);

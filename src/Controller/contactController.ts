@@ -250,6 +250,8 @@ if (!emailRegex.test(email)) {
         contactIdToGroups[contactId].push(groupId);
       });
 
+      
+
       // Fetch group details
       const groups = await Group.findAll({
         where: {
@@ -280,7 +282,58 @@ if (!emailRegex.test(email)) {
       }
     }
   },
+  getByUserIdPag: async (req: Request, res: Response) => {
+    const { userId } = req.params;
 
+  // Extract page and limit from query parameters, defaulting to page 1 and limit 20
+  const page = parseInt(req.query.page as string, 10) || 1;
+  const limit = parseInt(req.query.limit as string, 10) || 20;
+  const offset = (page - 1) * limit;  // Calculate the offset based on the current page
+
+  try {
+    // Fetch contacts with pagination
+    const contacts = await Contact.findAll({
+      where: { userId },
+      limit,     // Limit the number of contacts fetched
+      offset,    // Skip the records based on the current page
+    });
+
+    // Fetch all contact-group associations
+    const contactGroups = await ContactGroup.findAll({
+      where: { contactId: contacts.map(contact => contact.id) },
+      attributes: ['contactId', 'groupId'],
+    });
+
+    // Extract contactIds and groupIds into a map
+    const contactIdToGroups: { [key: number]: number[] } = {};
+    contactGroups.forEach(({ contactId, groupId }) => {
+      if (!contactIdToGroups[contactId]) {
+        contactIdToGroups[contactId] = [];
+      }
+      contactIdToGroups[contactId].push(groupId);
+    });
+
+    // Get the total count of contacts for the user (to calculate pagination)
+    const totalContacts = await Contact.count({
+      where: { userId },
+    });
+
+    // Send the response with paginated contacts and their groups
+    res.json({
+      page,
+      limit,
+      total: totalContacts,  // Total number of contacts (not just the ones on the current page)
+      totalPages: Math.ceil(totalContacts / limit),  // Total number of pages
+      data: contacts.map(contact => ({
+        ...contact.toJSON(),
+        groups: contactIdToGroups[contact.id] || []
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error', error });
+  }
+},
+  
   // O
     // Fetch all contacts under a specific group
     getContactsByGroupId: async (req: Request, res: Response) => {

@@ -98,7 +98,7 @@ export const developerController = {
       // Prepare mNotify API data
       const data = {
         recipient: Array.isArray(recipients) ? recipients : [],
-        sender: sender.name,
+        sender: 'Kamak',
         message: content,
         is_schedule: 'false',
       };

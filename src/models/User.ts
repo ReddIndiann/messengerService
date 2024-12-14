@@ -44,7 +44,7 @@ User.init(
     role: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'user', // Default role is set to 'user'
+      defaultValue: 'admin', // Default role is set to 'user'
     },
     walletbalance: {
       type: DataTypes.INTEGER,

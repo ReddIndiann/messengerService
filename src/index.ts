@@ -12,26 +12,33 @@ import groupRoutes from './routes/groupRoutes';
 import optRoutes from './routes/otpRoutes';
 import contactGroupRoutes from './routes/ContactGroupRoutes';
 import apiKeysRoutes from  './routes/apiKeysRoutes';
-import developerRoutes from './routes/developerSendMessageRoute'; // Adjust path as needed
-import WalletHistory from './routes/walletHistoryRoutes'; // Adjust path as needed
-import PackagesController from './routes/packagesRoute'; // Adjust path as needed
+import developerRoutes from './routes/developerSendMessageRoute';
+import WalletHistory from './routes/walletHistoryRoutes';
+import PackagesController from './routes/packagesRoute'; 
 import BundleHistory from './routes/bundleHistoryRoutes';
 import CreditUsageRoute from './routes/creditusageRoute';
 import CreditUsageOrderRoute from  './routes/creditusageorderRoute';
 import checkExpiredBundles from './Controller/expirycheck';
+import checkBonusExpiredBundle from './Controller/expirycccheck';
+import checkBonusExpiredBundles from './Controller/bonusexpirycheck';
 import { OtpController } from './Controller/otpController';
 import FaqRoutes from './routes/FaqRoutes';
+import MailSubscriptionRoute from './routes/mailSubscriptionRoute'
+import NewsLetterRoues from './routes/newsLetterRoute';
+import AdminConfigController from './routes/adminConfigRoutes';
 const app = express();
 app.use(cors({
-  origin: true, // Allow all domains for testing, you can restrict it later
+  origin: true, // Allow all domains for testing, 
   methods: 'GET,POST,PUT,DELETE,OPTIONS', // Allow specific HTTP methods
   allowedHeaders: 'Content-Type, Authorization' // Allow specific headers
 }));
 
-const port = 5000;
+const port = 5050;
  
 app.use(express.json());
 checkExpiredBundles()
+checkBonusExpiredBundle();
+checkBonusExpiredBundles();
 app.use('/auth', authRoutes);
 app.use('/senders', senderRoutes);
 app.use('/message-templates', messageTemplateRoutes);
@@ -50,6 +57,9 @@ app.use('/creditusage', CreditUsageRoute);
 app.use('/creditusageorder', CreditUsageOrderRoute);
 app.use('/bundle', BundleHistory);
 app.use('/faq', FaqRoutes);
+app.use('/mailsub', MailSubscriptionRoute);
+app.use('/news', NewsLetterRoues);
+app.use('/adminconfig', AdminConfigController);
 
 
 app.listen(port, () => {
@@ -63,7 +73,7 @@ app.listen(port, () => {
   }
 });
 
-
+ 
 
 
 

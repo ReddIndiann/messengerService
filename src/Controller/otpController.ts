@@ -2,126 +2,117 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import axios from 'axios';
 import Otp from '../models/Otp';
+import fs from 'fs';
+import path from 'path';
 import crypto from 'crypto';
 import { Op } from 'sequelize'; // Ensure you import Op for Sequelize operators
 import nodemailer from 'nodemailer';
 
-const endPoint = 'https://api.mnotify.com/api/sms/quick';
-const apiKey = process.env.MNOTIFY_APIKEY;
+import { sendSMS } from '../utility/smsService';
+import { sendEmail } from '../utility/emailService';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-const handleApiError = (apiError: any, res: Response) => {
-  if (axios.isAxiosError(apiError)) {
-    console.error('mNotify API Error:', {
-      status: apiError.response?.status,
-      statusText: apiError.response?.statusText,
-      data: apiError.response?.data,
-      message: apiError.message,
-    });
 
-    res.status(apiError.response?.status || 500).json({
-      message: 'Error from mNotify API',
-      error: {
-        status: apiError.response?.status,
-        statusText: apiError.response?.statusText,
-        data: apiError.response?.data,
-        message: apiError.message,
-      },
-    });
-  } else {
-    console.error('Unknown API Error:', apiError);
-    res.status(500).send('Server error');
-  }
-};
 export const OtpController = {
-     requestOtp : async (req: Request, res: Response) => {
-        const { phoneNumber } = req.body;
-      
-        try {
-          const user = await User.findOne({ where: { number: phoneNumber } });
-          if (!user) {
-            return res.status(404).json({ msg: 'This number doesnt belong to an account' });
-          }
-      
-          // Generate a 6-digit OTP
-          const otp = crypto.randomInt(100000, 999999).toString();
-          const otpEntry = await Otp.create({
-            userId: user.id,
-            otp,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
-          });
-      
-          const data = {
-            recipient: [user.number],
-            sender: 'Daniel',
-            message: `Your OTP for password reset is ${otp}. `,
-            is_schedule: 'false',
-            schedule_date: '',
-          };
-      
-          try {
-            const response = await axios.post(`${endPoint}?key=${apiKey}`, data, {
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-            });
-      
-            res.status(200).json({ message: 'OTP sent successfully' });
-          } catch (apiError) {
-            handleApiError(apiError, res);
-          }
-      
-        } catch (err) {
-          console.error('Error requesting OTP:', err);
-          res.status(500).send('Server error');
-        }
-      }  
-      ,
+   
+  requestOtp: async (req: Request, res: Response) => {
+    const { phoneNumber } = req.body;
 
-      requestOtpEmail: async (req: Request, res: Response) => {
-        const { email } = req.body; // Change to email instead of phone number
+    try {
+      const user = await User.findOne({ where: { number: phoneNumber } });
+      if (!user) {
+        return res.status(404).json({ msg: 'This number doesnt belong to an account' });
+      }
+
+      // Generate a 6-digit OTP
+      const otp = crypto.randomInt(100000, 999999).toString();
+      const content =    `Password Reset Verification
+
+      You have requested to reset your password for your K.ALERT account.
+            
+      Please use the following verification code to reset your password:${otp}.
+            
+            
+      This code will expire in 10 minutes for security reasons.
+      If you did not request this password reset, please contact our support team immediately.`
+            
+      try {
+        const response = await sendSMS([user.number], 'Kamak', content);
         
-        try {
-          const user = await User.findOne({ where: { email } }); // Use email to find user
-          if (!user) {
-            return res.status(404).json({ msg: 'This email doesn\'t belong to an account' });
-          }
-        
-          // Generate a 6-digit OTP
-          const otp = crypto.randomInt(100000, 999999).toString();
-          await Otp.create({
-            userId: user.id,
-            otp,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
+        const otpEntry = await Otp.create({
+          userId: user.id,
+          otp,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
+        });
+        if (response.status === 200) {
+          return res.status(200).json({ message: 'OTP sent successfully' });
+        } else {
+          return res.status(response.status).json({ 
+            message: response.message || 'Failed to send OTP' 
           });
-    
-          const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
-            subject: 'Your OTP Code',
-            text: `Your OTP for password reset is ${otp}..`,
-          };
-    
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Error sending email:', error);
-              return res.status(500).send('Error sending email');
-            }
-            res.status(200).json({ message: 'OTP sent successfully' });
-          });
-    
-        } catch (err) {
-          console.error('Error requesting OTP:', err);
-          res.status(500).send('Server error');
         }
-      },
+      } catch (error) {
+        console.error('Error sending OTP:', error);
+        return res.status(500).json({ message: 'Error sending OTP, please try again later' });
+      }
+      // First, attempt to send the OTP
+
+    } catch (err) {
+      console.error('Error requesting OTP:', err);
+      res.status(500).send('Server error');
+    }
+  },
+
+  requestOtpEmail: async (req: Request, res: Response) => {
+    const { email } = req.body; // Change to email instead of phone number
+
+    try {
+      const user = await User.findOne({ where: { email } }); // Use email to find user
+      if (!user) {
+        return res.status(404).json({ msg: 'This email doesn\'t belong to an account' });
+      }
+
+      // Generate a 6-digit OTP
+      const otp = crypto.randomInt(100000, 999999).toString();
+
+      fs.readFile(path.join(__dirname, '../mail/forgotPassword.html'), 'utf8', (err, htmlContent) => {
+        if (err) {
+          console.error('Error reading HTML file:', err);
+          return res.status(500).send('Server error');
+        }
+
+        // Replace the placeholder with the actual username
+        const personalizedHtml = htmlContent.replace('{{otp}}', otp);
+
+
+        const subject ='Welcome to Kalert';
+        const html =personalizedHtml;
+  
+        
+        // Send the email
+        sendEmail(email, subject, html); // Use the sendEmail function here
+
+      });
+   
+      await Otp.create({
+        userId: user.id,
+        otp,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // Expires in 10 minutes
+      });
+      res.status(200).json({ msg: 'OTP sent successfully' });
+      // First, attempt to send the email
+
+
+
+
+
+      
+      // Read the HTML template
+     
+    } catch (err) {
+      console.error('Error requesting OTP:', err);
+      res.status(500).send('Server error');
+    }
+  },
       
       verifyOtp : async (req: Request, res: Response) => {
         const { phoneNumber, otp } = req.body; // Use phoneNumber instead of email
